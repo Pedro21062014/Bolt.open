@@ -221,29 +221,55 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
     ref: string;
     files: { path: string; content: string }[];
   }) => {
-    const escape = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    const id = `github-import-${result.owner}-${result.repo}`.toLowerCase().replace(/[^a-z0-9-]/g, '-');
-    const actions = result.files
-      .map(
-        (f) =>
-          `<boltAction type="file" filePath="${escape(f.path)}">\n${escape(f.content)}\n</boltAction>`,
-      )
-      .join('\n');
+    const { webcontainer } = await import('~/lib/webcontainer');
+    const { WORK_DIR } = await import('~/utils/constants');
+    const nodePath = await import('node:path');
+    const wc = await webcontainer;
+
+    const dirs = new Set<string>();
+    for (const f of result.files) {
+      const dir = nodePath.dirname(f.path);
+      if (dir && dir !== '.') dirs.add(dir);
+    }
+    for (const dir of dirs) {
+      try {
+        await wc.fs.mkdir(nodePath.join(WORK_DIR, dir), { recursive: true });
+      } catch {}
+    }
+
+    let written = 0;
+    for (const f of result.files) {
+      try {
+        const full = nodePath.join(WORK_DIR, f.path);
+        await wc.fs.writeFile(full, f.content);
+        workbenchStore.files.setKey(full, { type: 'file', content: f.content, isBinary: false });
+        written++;
+      } catch (err) {
+        console.error('Failed to write', f.path, err);
+      }
+    }
+
+    workbenchStore.showWorkbench.set(true);
+    const firstFile = result.files[0];
+    if (firstFile) {
+      workbenchStore.setSelectedFile(nodePath.join(WORK_DIR, firstFile.path));
+    }
 
     const userMsg: Message = {
       id: `user-${Date.now()}`,
       role: 'user',
-      content: `Importing repository **${result.owner}/${result.repo}** (branch \`${result.ref}\`) from GitHub. Use the project as context for upcoming requests.`,
+      content: `Imported repository **${result.owner}/${result.repo}** (branch \`${result.ref}\`) from GitHub — ${written} files. Use the project as context for upcoming requests.`,
     };
     const assistantMsg: Message = {
       id: `assistant-${Date.now()}`,
       role: 'assistant',
-      content: `Imported \`${result.owner}/${result.repo}@${result.ref}\` (${result.files.length} files).\n\n<boltArtifact id="${id}" title="Imported ${result.owner}/${result.repo}">\n${actions}\n</boltArtifact>\n\nReady. Tell me what you'd like to change.`,
+      content: `Loaded \`${result.owner}/${result.repo}@${result.ref}\` into the workspace (${written} files written). Tell me what you'd like to change.`,
     };
 
     setMessages([...messages, userMsg, assistantMsg]);
     runAnimation();
     await storeMessageHistory([...messages, userMsg, assistantMsg]).catch(() => {});
+    toast.success(`${written} files written to workspace.`);
   };
 
   return (
