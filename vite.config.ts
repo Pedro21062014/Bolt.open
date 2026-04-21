@@ -7,6 +7,14 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 
 export default defineConfig((config) => {
   return {
+    server: {
+      host: '0.0.0.0',
+      port: 5000,
+      allowedHosts: true,
+      hmr: {
+        clientPort: 443,
+      },
+    },
     build: {
       target: 'esnext',
     },
