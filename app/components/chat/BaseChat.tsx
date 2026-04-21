@@ -6,6 +6,7 @@ import { IconButton } from '~/components/ui/IconButton';
 import { Workbench } from '~/components/workbench/Workbench.client';
 import { classNames } from '~/utils/classNames';
 import { Messages } from './Messages.client';
+import { ModelSelector } from './ModelSelector.client';
 import { SendButton } from './SendButton.client';
 
 import styles from './BaseChat.module.scss';
@@ -150,7 +151,8 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                     )}
                   </ClientOnly>
                   <div className="flex justify-between text-sm p-4 pt-2">
-                    <div className="flex gap-1 items-center">
+                    <div className="flex gap-2 items-center">
+                      <ClientOnly>{() => <ModelSelector />}</ClientOnly>
                       <IconButton
                         title="Enhance prompt"
                         disabled={input.length === 0 || enhancingPrompt}

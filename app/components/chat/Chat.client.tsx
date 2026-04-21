@@ -1,6 +1,7 @@
 import { useStore } from '@nanostores/react';
 import type { Message } from 'ai';
 import { useChat } from 'ai/react';
+import { llmStore } from '~/lib/stores/llm';
 import { useAnimate } from 'framer-motion';
 import { memo, useEffect, useRef, useState } from 'react';
 import { cssTransition, toast, ToastContainer } from 'react-toastify';
@@ -72,14 +73,30 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
   const [chatStarted, setChatStarted] = useState(initialMessages.length > 0);
 
   const { showChat } = useStore(chatStore);
+  const llm = useStore(llmStore);
 
   const [animationScope, animate] = useAnimate();
 
   const { messages, isLoading, input, handleInputChange, setInput, stop, append } = useChat({
     api: '/api/chat',
-    onError: (error) => {
+    body: {
+      provider: llm.provider,
+      model: llm.model,
+      apiKey: llm.keys[llm.provider] || '',
+    },
+    onError: async (error) => {
       logger.error('Request failed\n\n', error);
-      toast.error('There was an error processing your request');
+      let msg = 'There was an error processing your request';
+      try {
+        const anyErr = error as unknown as { message?: string };
+        if (anyErr.message) {
+          const parsed = JSON.parse(anyErr.message);
+          if (parsed?.error) msg = parsed.error;
+        }
+      } catch {
+        /* ignore */
+      }
+      toast.error(msg);
     },
     onFinish: () => {
       logger.debug('Finished streaming');

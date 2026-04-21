@@ -10,8 +10,10 @@ export default defineConfig((config) => {
     server: {
       host: '0.0.0.0',
       port: 5000,
+      strictPort: true,
       allowedHosts: true,
       hmr: {
+        protocol: 'wss',
         clientPort: 443,
       },
     },

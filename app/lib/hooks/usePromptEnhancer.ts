@@ -16,10 +16,12 @@ export function usePromptEnhancer() {
     setEnhancingPrompt(true);
     setPromptEnhanced(false);
 
+    const { getChatBody } = await import('~/lib/stores/llm');
     const response = await fetch('/api/enhancer', {
       method: 'POST',
       body: JSON.stringify({
         message: input,
+        ...getChatBody(),
       }),
     });
 

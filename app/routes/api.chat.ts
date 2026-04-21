@@ -1,15 +1,52 @@
 import { type ActionFunctionArgs } from '@remix-run/cloudflare';
 import { MAX_RESPONSE_SEGMENTS, MAX_TOKENS } from '~/lib/.server/llm/constants';
 import { CONTINUE_PROMPT } from '~/lib/.server/llm/prompts';
-import { streamText, type Messages, type StreamingOptions } from '~/lib/.server/llm/stream-text';
+import { streamText, type Messages, type ModelSelection, type StreamingOptions } from '~/lib/.server/llm/stream-text';
 import SwitchableStream from '~/lib/.server/llm/switchable-stream';
+import type { ProviderId } from '~/lib/.server/llm/model';
 
 export async function action(args: ActionFunctionArgs) {
   return chatAction(args);
 }
 
+interface ChatRequest {
+  messages: Messages;
+  provider?: ProviderId;
+  model?: string;
+  apiKey?: string;
+}
+
+function resolveSelection(body: ChatRequest, env: Env): ModelSelection {
+  const provider = (body.provider ?? 'anthropic') as ProviderId;
+  const apiKey =
+    body.apiKey ||
+    (provider === 'anthropic'
+      ? (typeof process !== 'undefined' ? process.env?.ANTHROPIC_API_KEY : undefined) || env.ANTHROPIC_API_KEY
+      : undefined);
+
+  if (!apiKey) {
+    throw new Response(
+      JSON.stringify({ error: `Missing API key for provider "${provider}". Configure it in Settings.` }),
+      { status: 400, headers: { 'content-type': 'application/json' } },
+    );
+  }
+
+  const model = body.model || (provider === 'anthropic' ? 'claude-3-5-sonnet-20240620' : '');
+
+  if (!model) {
+    throw new Response(JSON.stringify({ error: 'No model selected.' }), {
+      status: 400,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+
+  return { provider, model, apiKey };
+}
+
 async function chatAction({ context, request }: ActionFunctionArgs) {
-  const { messages } = await request.json<{ messages: Messages }>();
+  const body = await request.json<ChatRequest>();
+  const { messages } = body;
+  const selection = resolveSelection(body, context.cloudflare.env);
 
   const stream = new SwitchableStream();
 
@@ -32,13 +69,13 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
         messages.push({ role: 'assistant', content });
         messages.push({ role: 'user', content: CONTINUE_PROMPT });
 
-        const result = await streamText(messages, context.cloudflare.env, options);
+        const result = await streamText(messages, selection, options);
 
         return stream.switchSource(result.toAIStream());
       },
     };
 
-    const result = await streamText(messages, context.cloudflare.env, options);
+    const result = await streamText(messages, selection, options);
 
     stream.switchSource(result.toAIStream());
 
@@ -49,11 +86,17 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
       },
     });
   } catch (error) {
+    if (error instanceof Response) {
+      throw error;
+    }
+
     console.log(error);
 
-    throw new Response(null, {
+    const message = error instanceof Error ? error.message : 'Internal Server Error';
+
+    throw new Response(JSON.stringify({ error: message }), {
       status: 500,
-      statusText: 'Internal Server Error',
+      headers: { 'content-type': 'application/json' },
     });
   }
 }
