@@ -35,5 +35,5 @@ externalPort = 80
 
 [deployment]
 deploymentTarget = "cloudrun"
-run = ["sh", "-c", "pnpm dev"]
-build = ["pnpm", "run", "build"]
+run = ["sh", "-c", "pnpm run start"]
+build = ["sh", "-c", "pnpm run build"]
