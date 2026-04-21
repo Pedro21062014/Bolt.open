@@ -3,6 +3,8 @@ import { ClientOnly } from 'remix-utils/client-only';
 import { chatStore } from '~/lib/stores/chat';
 import { classNames } from '~/utils/classNames';
 import { HeaderActionButtons } from './HeaderActionButtons.client';
+import { ModelPicker } from './ModelPicker.client';
+import { SettingsDialog } from './SettingsDialog.client';
 import { ChatDescription } from '~/lib/persistence/ChatDescription.client';
 
 export function Header() {
@@ -27,15 +29,15 @@ export function Header() {
       <span className="flex-1 px-4 truncate text-center text-bolt-elements-textPrimary">
         <ClientOnly>{() => <ChatDescription />}</ClientOnly>
       </span>
-      {chat.started && (
-        <ClientOnly>
-          {() => (
-            <div className="mr-1">
-              <HeaderActionButtons />
-            </div>
-          )}
-        </ClientOnly>
-      )}
+      <ClientOnly>
+        {() => (
+          <div className="flex items-center gap-2 mr-1">
+            <ModelPicker />
+            <SettingsDialog />
+            {chat.started && <HeaderActionButtons />}
+          </div>
+        )}
+      </ClientOnly>
     </header>
   );
 }

@@ -34,6 +34,6 @@ localPort = 5000
 externalPort = 80
 
 [deployment]
-deploymentTarget = "autoscale"
-run = ["sh", "-c", "touch .env.local && bindings=$(./bindings.sh) && wrangler pages dev ./build/client --ip 0.0.0.0 --port 5000 $bindings"]
+deploymentTarget = "cloudrun"
+run = ["sh", "-c", "pnpm dev"]
 build = ["pnpm", "run", "build"]

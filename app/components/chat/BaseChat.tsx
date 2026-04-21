@@ -7,7 +7,6 @@ import { Workbench } from '~/components/workbench/Workbench.client';
 import { classNames } from '~/utils/classNames';
 import { GitHubImport } from './GitHubImport.client';
 import { Messages } from './Messages.client';
-import { ModelSelector } from './ModelSelector.client';
 import { SendButton } from './SendButton.client';
 
 import styles from './BaseChat.module.scss';
@@ -164,8 +163,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                     )}
                   </ClientOnly>
                   <div className="flex justify-between text-sm p-4 pt-2">
-                    <div className="flex gap-2 items-center">
-                      <ClientOnly>{() => <ModelSelector />}</ClientOnly>
+                    <div className="flex gap-1 items-center">
                       <IconButton
                         title="Enhance prompt"
                         disabled={input.length === 0 || enhancingPrompt}

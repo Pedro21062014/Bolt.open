@@ -1,6 +1,17 @@
-import { map } from 'nanostores';
+import { atom, map } from 'nanostores';
 
 export type ProviderId = 'anthropic' | 'openrouter' | 'google';
+
+export const PROVIDER_LABELS: Record<ProviderId, string> = {
+  anthropic: 'Anthropic',
+  openrouter: 'OpenRouter',
+  google: 'Google Gemini',
+};
+
+export interface ModelInfo {
+  id: string;
+  label: string;
+}
 
 export interface LLMState {
   provider: ProviderId;
@@ -34,6 +45,20 @@ function loadInitial(): LLMState {
 
 export const llmStore = map<LLMState>(loadInitial());
 
+export const modelsStore = map<Record<ProviderId, ModelInfo[]>>({
+  anthropic: [],
+  openrouter: [],
+  google: [],
+});
+
+export const modelsLoadingStore = map<Record<ProviderId, boolean>>({
+  anthropic: false,
+  openrouter: false,
+  google: false,
+});
+
+export const modelsErrorStore = atom<string | null>(null);
+
 if (typeof window !== 'undefined') {
   llmStore.subscribe((state) => {
     try {
@@ -52,17 +77,48 @@ export function setModel(model: string) {
   llmStore.setKey('model', model);
 }
 
+export function selectProviderModel(provider: ProviderId, model: string) {
+  llmStore.setKey('provider', provider);
+  llmStore.setKey('model', model);
+}
+
 export function setApiKey(provider: ProviderId, key: string) {
   const current = llmStore.get();
   llmStore.setKey('keys', { ...current.keys, [provider]: key });
 }
 
-export function getCurrentApiKey(): string {
-  const { provider, keys } = llmStore.get();
-  return keys[provider] || '';
-}
-
 export function getChatBody() {
   const { provider, model, keys } = llmStore.get();
   return { provider, model, apiKey: keys[provider] || '' };
+}
+
+export async function fetchModelsFor(provider: ProviderId): Promise<ModelInfo[]> {
+  const key = llmStore.get().keys[provider];
+  if (!key) {
+    modelsStore.setKey(provider, []);
+    return [];
+  }
+  modelsLoadingStore.setKey(provider, true);
+  modelsErrorStore.set(null);
+  try {
+    const res = await fetch(`/api/models?provider=${provider}`, { headers: { 'x-api-key': key } });
+    const data = (await res.json()) as { models?: ModelInfo[]; error?: string };
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    const models = data.models ?? [];
+    modelsStore.setKey(provider, models);
+    return models;
+  } catch (e) {
+    modelsErrorStore.set(`${PROVIDER_LABELS[provider]}: ${e instanceof Error ? e.message : e}`);
+    modelsStore.setKey(provider, []);
+    return [];
+  } finally {
+    modelsLoadingStore.setKey(provider, false);
+  }
+}
+
+export async function refreshAllConfiguredModels() {
+  const { keys } = llmStore.get();
+  await Promise.all(
+    (Object.keys(keys) as ProviderId[]).filter((p) => keys[p]).map((p) => fetchModelsFor(p)),
+  );
 }
