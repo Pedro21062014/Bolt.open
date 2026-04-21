@@ -77,7 +77,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
 
   const [animationScope, animate] = useAnimate();
 
-  const { messages, isLoading, input, handleInputChange, setInput, stop, append } = useChat({
+  const { messages, setMessages, isLoading, input, handleInputChange, setInput, stop, append } = useChat({
     api: '/api/chat',
     body: {
       provider: llm.provider,
@@ -215,8 +215,40 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
 
   const [messageRef, scrollRef] = useSnapScroll();
 
+  const importFromGithub = async (result: {
+    owner: string;
+    repo: string;
+    ref: string;
+    files: { path: string; content: string }[];
+  }) => {
+    const escape = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const id = `github-import-${result.owner}-${result.repo}`.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+    const actions = result.files
+      .map(
+        (f) =>
+          `<boltAction type="file" filePath="${escape(f.path)}">\n${escape(f.content)}\n</boltAction>`,
+      )
+      .join('\n');
+
+    const userMsg: Message = {
+      id: `user-${Date.now()}`,
+      role: 'user',
+      content: `Importing repository **${result.owner}/${result.repo}** (branch \`${result.ref}\`) from GitHub. Use the project as context for upcoming requests.`,
+    };
+    const assistantMsg: Message = {
+      id: `assistant-${Date.now()}`,
+      role: 'assistant',
+      content: `Imported \`${result.owner}/${result.repo}@${result.ref}\` (${result.files.length} files).\n\n<boltArtifact id="${id}" title="Imported ${result.owner}/${result.repo}">\n${actions}\n</boltArtifact>\n\nReady. Tell me what you'd like to change.`,
+    };
+
+    setMessages([...messages, userMsg, assistantMsg]);
+    runAnimation();
+    await storeMessageHistory([...messages, userMsg, assistantMsg]).catch(() => {});
+  };
+
   return (
     <BaseChat
+      importFromGithub={importFromGithub}
       ref={animationScope}
       textareaRef={textareaRef}
       input={input}

@@ -30,8 +30,8 @@ const PROVIDERS: { id: ProviderId; label: string; placeholder: string; helpUrl: 
   },
   {
     id: 'google',
-    label: 'Google AI',
-    placeholder: 'AIza...',
+    label: 'Google Gemini',
+    placeholder: 'AIza... (Gemini API key)',
     helpUrl: 'https://aistudio.google.com/app/apikey',
   },
 ];
