@@ -5,6 +5,7 @@ import { classNames } from '~/utils/classNames';
 import { HeaderActionButtons } from './HeaderActionButtons.client';
 import { ModelPicker } from './ModelPicker.client';
 import { SettingsDialog } from './SettingsDialog.client';
+import { GitHubPush } from '~/components/chat/GitHubPush.client';
 import { ChatDescription } from '~/lib/persistence/ChatDescription.client';
 
 export function Header() {
@@ -33,6 +34,7 @@ export function Header() {
         {() => (
           <div className="flex items-center gap-2 mr-1">
             <ModelPicker />
+            {chat.started && <GitHubPush />}
             <SettingsDialog />
             {chat.started && <HeaderActionButtons />}
           </div>
