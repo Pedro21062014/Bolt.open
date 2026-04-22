@@ -2,19 +2,26 @@ import { useStore } from '@nanostores/react';
 import { useState } from 'react';
 import { toast } from 'react-toastify';
 import { githubProviderTokenStore } from '~/lib/stores/auth';
-import { projectStore } from '~/lib/stores/project';
+import {
+  activeProjectIdStore,
+  getActiveProject,
+  projectsStore,
+  updateActiveProjectSettings,
+} from '~/lib/stores/project';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { WORK_DIR } from '~/utils/constants';
 import { GitHubRepoSelect } from './GitHubRepoSelect.client';
 
 export function GitHubPush({ trigger }: { trigger?: React.ReactNode }) {
-  const project = useStore(projectStore);
+  useStore(activeProjectIdStore);
+  useStore(projectsStore);
+  const project = getActiveProject();
   const files = useStore(workbenchStore.files);
   const ghToken = useStore(githubProviderTokenStore);
   const [open, setOpen] = useState(false);
-  const [token, setToken] = useState(project.github.token);
-  const [repo, setRepo] = useState(project.github.repo);
-  const [branch, setBranch] = useState(project.github.branch || 'main');
+  const [token, setToken] = useState(project.settings.github.token);
+  const [repo, setRepo] = useState(project.settings.github.repo);
+  const [branch, setBranch] = useState(project.settings.github.branch || 'main');
   const [message, setMessage] = useState('Sync from Bolt');
   const [isPrivate, setIsPrivate] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -49,7 +56,7 @@ export function GitHubPush({ trigger }: { trigger?: React.ReactNode }) {
     setLoading(true);
     try {
       await workbenchStore.saveAllFiles();
-      projectStore.setKey('github', { token: token.trim(), repo: repo.trim(), branch: branch.trim() || 'main' });
+      updateActiveProjectSettings({ github: { token: token.trim(), repo: repo.trim(), branch: branch.trim() || 'main' } });
 
       const res = await fetch('/api/github-push', {
         method: 'POST',
