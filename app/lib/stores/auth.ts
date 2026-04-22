@@ -25,24 +25,20 @@ if (typeof window !== 'undefined') {
     const t = localStorage.getItem(GH_TOKEN_KEY);
     if (t) githubProviderTokenStore.set(t);
   } catch {
-    /* ignore */
   }
   githubProviderTokenStore.subscribe((t) => {
     try {
       if (t) localStorage.setItem(GH_TOKEN_KEY, t);
       else localStorage.removeItem(GH_TOKEN_KEY);
     } catch {
-      /* ignore */
     }
   });
 }
 
 export async function initAuth() {
   const sb = getSupabase();
-  if (!sb) {
-    authStore.setKey('initialized', true);
-    return;
-  }
+  authStore.setKey('initialized', true);
+  if (!sb) return;
   const { data } = await sb.auth.getSession();
   if (data.session) {
     authStore.set({
@@ -54,10 +50,7 @@ export async function initAuth() {
     if (data.session.provider_token && data.session.user.app_metadata.provider === 'github') {
       githubProviderTokenStore.set(data.session.provider_token);
     }
-  } else {
-    authStore.setKey('initialized', true);
   }
-
   sb.auth.onAuthStateChange((event, session) => {
     authStore.set({
       user: session?.user ?? null,
