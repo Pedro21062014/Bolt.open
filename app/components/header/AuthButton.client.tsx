@@ -18,14 +18,22 @@ export function AuthButton() {
     }
   }, []);
 
+  const label = user ? 'Account' : 'Sign in';
+
   return (
-    <>
+    <div className="relative">
       <button
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          if (user) {
+            setMenu((v) => !v);
+            return;
+          }
+          setOpen(true);
+        }}
         disabled={supabaseEnabled && !authInit}
         className="px-3 py-1.5 rounded-md text-sm bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent border border-bolt-elements-item-contentAccent disabled:opacity-50"
       >
-        {user ? 'Account' : 'Sign in'}
+        {label}
       </button>
       <AuthDialog open={open} onClose={() => setOpen(false)} />
       {user && menu && (
@@ -55,6 +63,6 @@ export function AuthButton() {
           </button>
         </div>
       )}
-    </>
+    </div>
   );
 }
