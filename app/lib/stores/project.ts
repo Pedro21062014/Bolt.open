@@ -1,11 +1,11 @@
-import { map } from 'nanostores';
+import { atom, map } from 'nanostores';
 
 export interface EnvVar {
   key: string;
   value: string;
 }
 
-export interface ProjectState {
+export interface ProjectSettings {
   name: string;
   description: string;
   logo: string;
@@ -17,9 +17,16 @@ export interface ProjectState {
   };
 }
 
-const STORAGE_KEY = 'bolt.project.settings';
+export interface ProjectRecord {
+  id: string;
+  name: string;
+  settings: ProjectSettings;
+}
 
-const DEFAULT_STATE: ProjectState = {
+const PROJECTS_KEY = 'bolt.project.records';
+const ACTIVE_PROJECT_KEY = 'bolt.project.active';
+
+const DEFAULT_SETTINGS: ProjectSettings = {
   name: '',
   description: '',
   logo: '',
@@ -27,40 +34,72 @@ const DEFAULT_STATE: ProjectState = {
   github: { token: '', repo: '', branch: 'main' },
 };
 
-function loadInitial(): ProjectState {
-  if (typeof localStorage === 'undefined') return DEFAULT_STATE;
+function loadProjects(): Record<string, ProjectRecord> {
+  if (typeof localStorage === 'undefined') return {};
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return DEFAULT_STATE;
-    const parsed = JSON.parse(raw);
-    return {
-      ...DEFAULT_STATE,
-      ...parsed,
-      github: { ...DEFAULT_STATE.github, ...(parsed.github ?? {}) },
-      envVars: Array.isArray(parsed.envVars) ? parsed.envVars : [],
-    };
+    const raw = localStorage.getItem(PROJECTS_KEY);
+    if (!raw) return {};
+    return JSON.parse(raw) as Record<string, ProjectRecord>;
   } catch {
-    return DEFAULT_STATE;
+    return {};
   }
 }
 
-export const projectStore = map<ProjectState>(loadInitial());
+function loadActiveProjectId(): string {
+  if (typeof localStorage === 'undefined') return 'default';
+  return localStorage.getItem(ACTIVE_PROJECT_KEY) || 'default';
+}
+
+export const activeProjectIdStore = atom<string>(loadActiveProjectId());
+export const projectsStore = map<Record<string, ProjectRecord>>(loadProjects());
 
 if (typeof window !== 'undefined') {
-  projectStore.subscribe((state) => {
+  projectsStore.subscribe((state) => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      localStorage.setItem(PROJECTS_KEY, JSON.stringify(state));
+    } catch {
+      /* ignore */
+    }
+  });
+  activeProjectIdStore.subscribe((value) => {
+    try {
+      localStorage.setItem(ACTIVE_PROJECT_KEY, value);
     } catch {
       /* ignore */
     }
   });
 }
 
+export function getActiveProject(): ProjectRecord {
+  const projects = projectsStore.get();
+  const id = activeProjectIdStore.get();
+  return projects[id] ?? { id, name: '', settings: DEFAULT_SETTINGS };
+}
+
+export function setActiveProject(id: string, name = '') {
+  activeProjectIdStore.set(id);
+  const projects = projectsStore.get();
+  if (!projects[id]) {
+    projectsStore.setKey(id, { id, name, settings: DEFAULT_SETTINGS });
+  }
+}
+
+export function updateActiveProjectSettings(patch: Partial<ProjectSettings>) {
+  const id = activeProjectIdStore.get();
+  const current = getActiveProject();
+  projectsStore.setKey(id, {
+    ...current,
+    settings: {
+      ...DEFAULT_SETTINGS,
+      ...current.settings,
+      ...patch,
+      github: { ...DEFAULT_SETTINGS.github, ...current.settings.github, ...(patch.github ?? {}) },
+    },
+  });
+}
+
 export function envVarsToFile(envVars: EnvVar[]): string {
-  return envVars
-    .filter((v) => v.key.trim())
-    .map((v) => `${v.key.trim()}=${v.value}`)
-    .join('\n') + '\n';
+  return envVars.filter((v) => v.key.trim()).map((v) => `${v.key.trim()}=${v.value}`).join('\n') + '\n';
 }
 
 export async function writeEnvFile(envVars: EnvVar[]) {

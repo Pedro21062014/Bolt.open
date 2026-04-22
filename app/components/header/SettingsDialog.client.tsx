@@ -10,7 +10,16 @@ import {
   setApiKey,
   type ProviderId,
 } from '~/lib/stores/llm';
-import { projectStore, writeEnvFile, type EnvVar } from '~/lib/stores/project';
+import {
+  activeProjectIdStore,
+  getActiveProject,
+  projectsStore,
+  updateActiveProjectSettings,
+  writeEnvFile,
+  type EnvVar,
+} from '~/lib/stores/project';
+
+type Tab = 'keys' | 'project';
 
 const PROVIDERS: { id: ProviderId; placeholder: string; helpUrl: string; helpText: string }[] = [
   {
@@ -33,38 +42,33 @@ const PROVIDERS: { id: ProviderId; placeholder: string; helpUrl: string; helpTex
   },
 ];
 
-type Tab = 'keys' | 'project';
-
 export function SettingsDialog() {
   const { keys } = useStore(llmStore);
   const models = useStore(modelsStore);
   const loading = useStore(modelsLoadingStore);
-  const project = useStore(projectStore);
+  const projectId = useStore(activeProjectIdStore);
+  const projects = useStore(projectsStore);
+  const active = projects[projectId] ?? getActiveProject();
 
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<Tab>('keys');
   const [drafts, setDrafts] = useState<Record<ProviderId, string>>(keys);
-  const [revealed, setRevealed] = useState<Record<ProviderId, boolean>>({
-    anthropic: false,
-    openrouter: false,
-    google: false,
-  });
-
-  // project drafts
-  const [pName, setPName] = useState(project.name);
-  const [pDesc, setPDesc] = useState(project.description);
-  const [pLogo, setPLogo] = useState(project.logo);
-  const [pEnv, setPEnv] = useState<EnvVar[]>(project.envVars);
+  const [revealed, setRevealed] = useState<Record<ProviderId, boolean>>({ anthropic: false, openrouter: false, google: false });
+  const [pName, setPName] = useState(active.name);
+  const [pDesc, setPDesc] = useState(active.settings.description);
+  const [pLogo, setPLogo] = useState(active.settings.logo);
+  const [pEnv, setPEnv] = useState<EnvVar[]>(active.settings.envVars);
 
   useEffect(() => {
     if (open) {
       setDrafts(keys);
-      setPName(project.name);
-      setPDesc(project.description);
-      setPLogo(project.logo);
-      setPEnv(project.envVars.length ? project.envVars : []);
+      const current = projects[projectId] ?? getActiveProject();
+      setPName(current.name);
+      setPDesc(current.settings.description);
+      setPLogo(current.settings.logo);
+      setPEnv(current.settings.envVars.length ? current.settings.envVars : []);
     }
-  }, [open, keys, project]);
+  }, [open, keys, projectId, projects]);
 
   async function saveAndTest(provider: ProviderId) {
     const value = drafts[provider].trim();
@@ -93,8 +97,7 @@ export function SettingsDialog() {
 
   async function saveProject() {
     const cleanedEnv = pEnv.filter((v) => v.key.trim());
-    projectStore.set({
-      ...projectStore.get(),
+    updateActiveProjectSettings({
       name: pName,
       description: pDesc,
       logo: pLogo,
@@ -170,8 +173,7 @@ export function SettingsDialog() {
             {tab === 'keys' && (
               <div className="p-5 space-y-4">
                 <p className="text-xs text-bolt-elements-textTertiary">
-                  Add your own API keys. Models from each provider with a valid key will appear in the model selector.
-                  Keys are stored only in your browser.
+                  Add your own API keys. Models from each provider with a valid key will appear in the model selector. Keys are stored only in your browser.
                 </p>
                 {PROVIDERS.map((p) => {
                   const count = models[p.id].length;
@@ -235,11 +237,7 @@ export function SettingsDialog() {
                 <div className="flex items-start gap-4">
                   <div className="flex flex-col items-center gap-2">
                     <div className="w-20 h-20 rounded-md border border-bolt-elements-borderColor bg-bolt-elements-background-depth-1 flex items-center justify-center overflow-hidden">
-                      {pLogo ? (
-                        <img src={pLogo} alt="logo" className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="i-ph:image text-2xl text-bolt-elements-textTertiary" />
-                      )}
+                      {pLogo ? <img src={pLogo} alt="logo" className="w-full h-full object-cover" /> : <div className="i-ph:image text-2xl text-bolt-elements-textTertiary" />}
                     </div>
                     <label className="text-[11px] text-bolt-elements-textTertiary cursor-pointer hover:text-bolt-elements-textPrimary">
                       <input
@@ -251,10 +249,7 @@ export function SettingsDialog() {
                       Upload logo
                     </label>
                     {pLogo && (
-                      <button
-                        onClick={() => setPLogo('')}
-                        className="text-[11px] text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary"
-                      >
+                      <button onClick={() => setPLogo('')} className="text-[11px] text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary">
                         Remove
                       </button>
                     )}
@@ -296,13 +291,9 @@ export function SettingsDialog() {
                       <div className="i-ph:plus text-xs" /> Add
                     </button>
                   </div>
-                  <p className="text-[11px] text-bolt-elements-textTertiary mb-2">
-                    Saved to a <code>.env</code> file in your workspace on save.
-                  </p>
+                  <p className="text-[11px] text-bolt-elements-textTertiary mb-2">Saved to a <code>.env</code> file in your workspace on save.</p>
                   <div className="space-y-1.5">
-                    {pEnv.length === 0 && (
-                      <p className="text-[11px] text-bolt-elements-textTertiary italic">No variables yet — click Add.</p>
-                    )}
+                    {pEnv.length === 0 && <p className="text-[11px] text-bolt-elements-textTertiary italic">No variables yet — click Add.</p>}
                     {pEnv.map((v, i) => (
                       <div key={i} className="flex gap-1.5">
                         <input
@@ -343,10 +334,7 @@ export function SettingsDialog() {
             )}
 
             <div className="flex justify-end px-5 pb-5">
-              <button
-                onClick={() => setOpen(false)}
-                className="px-3 py-1.5 rounded text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary"
-              >
+              <button onClick={() => setOpen(false)} className="px-3 py-1.5 rounded text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary">
                 Done
               </button>
             </div>
