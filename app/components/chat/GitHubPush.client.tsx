@@ -1,13 +1,16 @@
 import { useStore } from '@nanostores/react';
 import { useState } from 'react';
 import { toast } from 'react-toastify';
+import { githubProviderTokenStore } from '~/lib/stores/auth';
 import { projectStore } from '~/lib/stores/project';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { WORK_DIR } from '~/utils/constants';
+import { GitHubRepoSelect } from './GitHubRepoSelect.client';
 
 export function GitHubPush({ trigger }: { trigger?: React.ReactNode }) {
   const project = useStore(projectStore);
   const files = useStore(workbenchStore.files);
+  const ghToken = useStore(githubProviderTokenStore);
   const [open, setOpen] = useState(false);
   const [token, setToken] = useState(project.github.token);
   const [repo, setRepo] = useState(project.github.repo);
@@ -32,7 +35,8 @@ export function GitHubPush({ trigger }: { trigger?: React.ReactNode }) {
   }
 
   async function submit() {
-    if (!token.trim() || !repo.trim()) {
+    const useToken = (token.trim() || ghToken || '').trim();
+    if (!useToken || !repo.trim()) {
       toast.error('Token and repository are required.');
       return;
     }
@@ -51,7 +55,7 @@ export function GitHubPush({ trigger }: { trigger?: React.ReactNode }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          token: token.trim(),
+          token: useToken,
           repo: repo.trim(),
           branch: branch.trim() || 'main',
           message: message.trim() || 'Sync from Bolt',
@@ -102,28 +106,37 @@ export function GitHubPush({ trigger }: { trigger?: React.ReactNode }) {
             </div>
 
             <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-bolt-elements-textSecondary mb-1">
-                  GitHub token <a href="https://github.com/settings/tokens/new?scopes=repo&description=Bolt" target="_blank" rel="noreferrer" className="underline">(create one)</a>
-                </label>
-                <input
-                  type="password"
-                  value={token}
-                  onChange={(e) => setToken(e.target.value)}
-                  placeholder="ghp_... (needs `repo` scope)"
-                  className="w-full px-3 py-2 rounded text-sm bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor text-bolt-elements-textPrimary focus:outline-none focus:border-bolt-elements-item-contentAccent"
-                />
-              </div>
+              {ghToken ? (
+                <div className="text-[11px] text-bolt-elements-textTertiary flex items-center gap-1">
+                  <div className="i-ph:check-circle text-bolt-elements-item-contentAccent" />
+                  Using your GitHub account credentials.
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-xs font-medium text-bolt-elements-textSecondary mb-1">
+                    GitHub token <a href="https://github.com/settings/tokens/new?scopes=repo&description=Bolt" target="_blank" rel="noreferrer" className="underline">(create one)</a>
+                  </label>
+                  <input
+                    type="password"
+                    value={token}
+                    onChange={(e) => setToken(e.target.value)}
+                    placeholder="ghp_... (needs `repo` scope)"
+                    className="w-full px-3 py-2 rounded text-sm bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor text-bolt-elements-textPrimary focus:outline-none focus:border-bolt-elements-item-contentAccent"
+                  />
+                  <p className="text-[11px] text-bolt-elements-textTertiary mt-1">Or sign in with GitHub to skip this.</p>
+                </div>
+              )}
 
               <div className="flex gap-2">
                 <div className="flex-1">
                   <label className="block text-xs font-medium text-bolt-elements-textSecondary mb-1">Repository (owner/name)</label>
-                  <input
-                    type="text"
+                  <GitHubRepoSelect
                     value={repo}
-                    onChange={(e) => setRepo(e.target.value)}
+                    onChange={(v, defaultBranch) => {
+                      setRepo(v);
+                      if (defaultBranch) setBranch(defaultBranch);
+                    }}
                     placeholder="username/my-project"
-                    className="w-full px-3 py-2 rounded text-sm bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor text-bolt-elements-textPrimary focus:outline-none focus:border-bolt-elements-item-contentAccent"
                   />
                 </div>
                 <div className="w-28">

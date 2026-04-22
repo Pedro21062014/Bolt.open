@@ -2,6 +2,7 @@ import { useStore } from '@nanostores/react';
 import { ClientOnly } from 'remix-utils/client-only';
 import { chatStore } from '~/lib/stores/chat';
 import { classNames } from '~/utils/classNames';
+import { AuthButton } from './AuthButton.client';
 import { HeaderActionButtons } from './HeaderActionButtons.client';
 import { ModelPicker } from './ModelPicker.client';
 import { SettingsDialog } from './SettingsDialog.client';
@@ -36,6 +37,7 @@ export function Header() {
             <ModelPicker />
             {chat.started && <GitHubPush />}
             <SettingsDialog />
+            <AuthButton />
             {chat.started && <HeaderActionButtons />}
           </div>
         )}
