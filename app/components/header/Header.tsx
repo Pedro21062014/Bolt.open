@@ -15,7 +15,7 @@ export function Header() {
   return (
     <header
       className={classNames(
-        'flex items-center bg-bolt-elements-background-depth-1 p-5 border-b h-[var(--header-height)]',
+        'flex items-center justify-between bg-bolt-elements-background-depth-1 p-5 border-b h-[var(--header-height)]',
         {
           'border-transparent': !chat.started,
           'border-bolt-elements-borderColor': chat.started,
@@ -31,17 +31,19 @@ export function Header() {
       <span className="flex-1 px-4 truncate text-center text-bolt-elements-textPrimary">
         <ClientOnly>{() => <ChatDescription />}</ClientOnly>
       </span>
-      <ClientOnly>
-        {() => (
-          <div className="flex items-center gap-2 mr-1">
-            <ModelPicker />
-            {chat.started && <GitHubPush />}
-            <SettingsDialog />
-            <AuthButton />
-            {chat.started && <HeaderActionButtons />}
-          </div>
-        )}
-      </ClientOnly>
+      <div className="flex items-center gap-2 shrink-0 relative z-[50]">
+        <ClientOnly>
+          {() => (
+            <>
+              <ModelPicker />
+              {chat.started && <GitHubPush />}
+              <SettingsDialog />
+              <AuthButton />
+              {chat.started && <HeaderActionButtons />}
+            </>
+          )}
+        </ClientOnly>
+      </div>
     </header>
   );
 }
