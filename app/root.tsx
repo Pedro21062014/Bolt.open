@@ -58,7 +58,7 @@ export const Head = createHead(() => (
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <Meta />
     <Links />
-    <script src="/coi-serviceworker.js"></script>
+    <script src="/coi-serviceworker.js" async></script>
     <script dangerouslySetInnerHTML={{ __html: inlineThemeCode }} />
   </>
 ));
@@ -68,6 +68,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     document.querySelector('html')?.setAttribute('data-theme', theme);
+    
+    if (window.crossOriginIsolated === false) {
+      console.warn('A página não está isolada de origem cruzada. O WebContainer pode falhar.');
+    }
   }, [theme]);
 
   return (
