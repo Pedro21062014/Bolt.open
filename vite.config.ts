@@ -16,6 +16,10 @@ export default defineConfig((config) => {
         protocol: 'wss',
         clientPort: 443,
       },
+      headers: {
+        'Cross-Origin-Embedder-Policy': 'require-corp',
+        'Cross-Origin-Opener-Policy': 'same-origin',
+      },
     },
     build: {
       target: 'esnext',
