@@ -1,4 +1,6 @@
 import { atom, map } from 'nanostores';
+import { getSupabase } from '~/lib/supabase';
+import { authStore } from './auth';
 
 export interface EnvVar {
   key: string;
@@ -84,18 +86,52 @@ export function setActiveProject(id: string, name = '') {
   }
 }
 
-export function updateActiveProjectSettings(patch: Partial<ProjectSettings>) {
+export async function updateActiveProjectSettings(patch: Partial<ProjectSettings>) {
   const id = activeProjectIdStore.get();
   const current = getActiveProject();
-  projectsStore.setKey(id, {
+  
+  const updatedSettings = {
+    ...DEFAULT_SETTINGS,
+    ...current.settings,
+    ...patch,
+    github: { ...DEFAULT_SETTINGS.github, ...current.settings.github, ...(patch.github ?? {}) },
+  };
+
+  const updatedProject = {
     ...current,
-    settings: {
-      ...DEFAULT_SETTINGS,
-      ...current.settings,
-      ...patch,
-      github: { ...DEFAULT_SETTINGS.github, ...current.settings.github, ...(patch.github ?? {}) },
-    },
-  });
+    name: patch.name || current.name,
+    settings: updatedSettings,
+  };
+
+  projectsStore.setKey(id, updatedProject);
+
+  // Persistência no Supabase
+  const sb = getSupabase();
+  const { user } = authStore.get();
+
+  if (sb && user) {
+    const projectData = {
+      owner_id: user.id,
+      name: updatedProject.name || 'Untitled Project',
+      description: updatedSettings.description,
+      logo: updatedSettings.logo,
+      env_vars: updatedSettings.envVars,
+      github_repo: updatedSettings.github.repo,
+      github_branch: updatedSettings.github.branch,
+      github_token: updatedSettings.github.token,
+      updated_at: new Error().stack?.includes('saveProject') ? new Date().toISOString() : undefined
+    };
+
+    if (id !== 'default' && id.length > 10) {
+      await sb.from('projects').upsert({ id, ...projectData });
+    } else {
+      const { data } = await sb.from('projects').insert(projectData).select().single();
+      if (data) {
+        activeProjectIdStore.set(data.id);
+        projectsStore.setKey(data.id, { ...updatedProject, id: data.id });
+      }
+    }
+  }
 }
 
 export function envVarsToFile(envVars: EnvVar[]): string {

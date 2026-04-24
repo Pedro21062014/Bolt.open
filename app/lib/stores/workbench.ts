@@ -9,6 +9,8 @@ import { EditorStore } from './editor';
 import { FilesStore, type FileMap } from './files';
 import { PreviewsStore } from './previews';
 import { TerminalStore } from './terminal';
+import { getSupabase } from '~/lib/supabase';
+import { activeProjectIdStore } from './project';
 
 export interface ArtifactState {
   id: string;
@@ -162,6 +164,20 @@ export class WorkbenchStore {
     }
 
     await this.#filesStore.saveFile(filePath, document.value);
+
+    // Sincronização com Supabase
+    const sb = getSupabase();
+    const projectId = activeProjectIdStore.get();
+
+    if (sb && projectId !== 'default') {
+      await sb.from('project_files').upsert({
+        project_id: projectId,
+        path: filePath,
+        content: document.value,
+        is_binary: false,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'project_id,path' });
+    }
 
     const newUnsavedFiles = new Set(this.unsavedFiles.get());
     newUnsavedFiles.delete(filePath);
