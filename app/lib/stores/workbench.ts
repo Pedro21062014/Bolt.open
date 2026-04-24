@@ -11,6 +11,8 @@ import { PreviewsStore } from './previews';
 import { TerminalStore } from './terminal';
 import { getSupabase } from '~/lib/supabase';
 import { activeProjectIdStore } from './project';
+import { WORK_DIR } from '~/utils/constants';
+import * as nodePath from 'node:path';
 
 export interface ArtifactState {
   id: string;
@@ -92,12 +94,66 @@ export class WorkbenchStore {
     this.#editorStore.setDocuments(files);
 
     if (this.#filesStore.filesCount > 0 && this.currentDocument.get() === undefined) {
-      // we find the first file and select it
       for (const [filePath, dirent] of Object.entries(files)) {
         if (dirent?.type === 'file') {
           this.setSelectedFile(filePath);
           break;
         }
+      }
+    }
+  }
+
+  async clearWorkspace() {
+    const wc = await webcontainer;
+    try {
+      // Remove todos os arquivos e pastas recursivamente
+      const process = await wc.spawn('rm', ['-rf', '.', '../*']);
+      await process.exit;
+      this.files.set({});
+      this.unsavedFiles.set(new Set());
+    } catch (err) {
+      console.error('Failed to clear workspace', err);
+    }
+  }
+
+  async loadProjectFiles(projectId: string) {
+    if (!projectId || projectId === 'default') return;
+    
+    const sb = getSupabase();
+    if (!sb) return;
+
+    const { data: files, error } = await sb
+      .from('project_files')
+      .select('path, content')
+      .eq('project_id', projectId);
+
+    if (error || !files) return;
+
+    const wc = await webcontainer;
+    
+    // Criar diretórios necessários
+    const dirs = new Set<string>();
+    for (const file of files) {
+      const dir = nodePath.dirname(file.path);
+      if (dir && dir !== '.' && dir !== WORK_DIR) {
+        dirs.add(dir.startsWith(WORK_DIR) ? dir.slice(WORK_DIR.length + 1) : dir);
+      }
+    }
+
+    for (const dir of dirs) {
+      try {
+        await wc.fs.mkdir(dir, { recursive: true });
+      } catch {}
+    }
+
+    // Escrever arquivos
+    for (const file of files) {
+      try {
+        const relPath = file.path.startsWith(WORK_DIR) ? file.path.slice(WORK_DIR.length + 1) : file.path;
+        await wc.fs.writeFile(relPath, file.content);
+        this.files.setKey(file.path, { type: 'file', content: file.content, isBinary: false });
+      } catch (err) {
+        console.error(`Failed to restore file ${file.path}`, err);
       }
     }
   }
@@ -165,7 +221,6 @@ export class WorkbenchStore {
 
     await this.#filesStore.saveFile(filePath, document.value);
 
-    // Sincronização com Supabase
     const sb = getSupabase();
     const projectId = activeProjectIdStore.get();
 
@@ -227,7 +282,7 @@ export class WorkbenchStore {
   }
 
   abortAllActions() {
-    // TODO: what do we wanna do and how do we wanna recover from this?
+    // TODO
   }
 
   addArtifact({ messageId, title, id }: ArtifactCallbackData) {

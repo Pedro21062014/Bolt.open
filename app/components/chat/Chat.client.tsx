@@ -9,6 +9,7 @@ import { useMessageParser, usePromptEnhancer, useShortcuts, useSnapScroll } from
 import { useChatHistory } from '~/lib/persistence';
 import { chatStore } from '~/lib/stores/chat';
 import { workbenchStore } from '~/lib/stores/workbench';
+import { activeProjectIdStore } from '~/lib/stores/project';
 import { fileModificationsToHTML } from '~/utils/diff';
 import { cubicEasingFn } from '~/utils/easings';
 import { createScopedLogger, renderLogger } from '~/utils/logger';
@@ -38,9 +39,6 @@ export function Chat() {
           );
         }}
         icon={({ type }) => {
-          /**
-           * @todo Handle more types if we need them. This may require extra color palettes.
-           */
           switch (type) {
             case 'success': {
               return <div className="i-ph:check-bold text-bolt-elements-icon-success text-2xl" />;
@@ -74,6 +72,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
 
   const { showChat } = useStore(chatStore);
   const llm = useStore(llmStore);
+  const projectId = useStore(activeProjectIdStore);
 
   const [animationScope, animate] = useAnimate();
 
@@ -111,6 +110,13 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
 
   useEffect(() => {
     chatStore.setKey('started', initialMessages.length > 0);
+    
+    // Sincronizar arquivos do Supabase se houver um projeto ativo
+    if (projectId && projectId !== 'default') {
+      workbenchStore.loadProjectFiles(projectId).then(() => {
+        logger.info('Project files synchronized from database');
+      });
+    }
   }, []);
 
   useEffect(() => {
@@ -170,13 +176,6 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
       return;
     }
 
-    /**
-     * @note (delm) Usually saving files shouldn't take long but it may take longer if there
-     * many unsaved files. In that case we need to block user input and show an indicator
-     * of some kind so the user is aware that something is happening. But I consider the
-     * happy case to be no unsaved files and I would expect users to save their changes
-     * before they send another message.
-     */
     await workbenchStore.saveAllFiles();
 
     const fileModifications = workbenchStore.getFileModifcations();
@@ -187,20 +186,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
 
     if (fileModifications !== undefined) {
       const diff = fileModificationsToHTML(fileModifications);
-
-      /**
-       * If we have file modifications we append a new user message manually since we have to prefix
-       * the user input with the file modifications and we don't want the new user input to appear
-       * in the prompt. Using `append` is almost the same as `handleSubmit` except that we have to
-       * manually reset the input and we'd have to manually pass in file attachments. However, those
-       * aren't relevant here.
-       */
       append({ role: 'user', content: `${diff}\n\n${_input}` });
-
-      /**
-       * After sending a new message we reset all modifications since the model
-       * should now be aware of all the changes.
-       */
       workbenchStore.resetAllFileModifications();
     } else {
       append({ role: 'user', content: _input });
@@ -226,6 +212,9 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
     const nodePath = await import('node:path');
     const wc = await webcontainer;
 
+    // Limpar workspace antes de importar
+    await workbenchStore.clearWorkspace();
+
     const dirs = new Set<string>();
     for (const f of result.files) {
       const dir = nodePath.dirname(f.path);
@@ -233,16 +222,16 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
     }
     for (const dir of dirs) {
       try {
-        await wc.fs.mkdir(nodePath.join(WORK_DIR, dir), { recursive: true });
+        await wc.fs.mkdir(dir, { recursive: true });
       } catch {}
     }
 
     let written = 0;
     for (const f of result.files) {
       try {
-        const full = nodePath.join(WORK_DIR, f.path);
-        await wc.fs.writeFile(full, f.content);
-        workbenchStore.files.setKey(full, { type: 'file', content: f.content, isBinary: false });
+        await wc.fs.writeFile(f.path, f.content);
+        const fullPath = nodePath.join(WORK_DIR, f.path);
+        workbenchStore.files.setKey(fullPath, { type: 'file', content: f.content, isBinary: false });
         written++;
       } catch (err) {
         console.error('Failed to write', f.path, err);
