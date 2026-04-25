@@ -8,20 +8,9 @@ import { ModelPicker } from './ModelPicker.client';
 import { SettingsDialog } from './SettingsDialog.client';
 import { GitHubPush } from '~/components/chat/GitHubPush.client';
 import { ChatDescription } from '~/lib/persistence/ChatDescription.client';
-import { workbenchStore } from '~/lib/stores/workbench';
-import { toast } from 'react-toastify';
 
 export function Header() {
   const chat = useStore(chatStore);
-
-  const handleSaveApp = async () => {
-    try {
-      await workbenchStore.saveAllFiles();
-      toast.success('App saved successfully!');
-    } catch (error) {
-      toast.error('Failed to save app');
-    }
-  };
 
   return (
     <header
@@ -47,16 +36,6 @@ export function Header() {
           {() => (
             <>
               <ModelPicker />
-              {chat.started && (
-                <button
-                  onClick={handleSaveApp}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent border border-bolt-elements-item-contentAccent hover:brightness-110 transition-all"
-                  title="Save App"
-                >
-                  <div className="i-ph:floppy-disk-duotone text-base" />
-                  <span className="hidden sm:inline">Save App</span>
-                </button>
-              )}
               {chat.started && <GitHubPush />}
               <SettingsDialog />
               <AuthButton />
