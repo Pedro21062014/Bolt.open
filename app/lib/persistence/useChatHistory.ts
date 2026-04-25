@@ -4,7 +4,6 @@ import { atom } from 'nanostores';
 import type { Message } from 'ai';
 import { toast } from 'react-toastify';
 import { workbenchStore } from '~/lib/stores/workbench';
-import { activeProjectIdStore } from '~/lib/stores/project';
 import { getMessages, getNextId, getUrlId, openDatabase, setMessages } from './db';
 
 export interface ChatHistoryItem {
@@ -49,7 +48,6 @@ export function useChatHistory() {
             setUrlId(storedMessages.urlId);
             description.set(storedMessages.description);
             chatId.set(storedMessages.id);
-            activeProjectIdStore.set(storedMessages.id); // Sincroniza o projeto
           } else {
             navigate(`/`, { replace: true });
           }
@@ -60,7 +58,7 @@ export function useChatHistory() {
           toast.error(error.message);
         });
     }
-  }, [mixedId]);
+  }, []);
 
   return {
     ready: !mixedId || ready,
@@ -87,7 +85,6 @@ export function useChatHistory() {
         const nextId = await getNextId(db);
 
         chatId.set(nextId);
-        activeProjectIdStore.set(nextId); // Sincroniza o projeto novo
 
         if (!urlId) {
           navigateChat(nextId);
@@ -100,6 +97,11 @@ export function useChatHistory() {
 }
 
 function navigateChat(nextId: string) {
+  /**
+   * FIXME: Using the intended navigate function causes a rerender for <Chat /> that breaks the app.
+   *
+   * `navigate(`/chat/${nextId}`, { replace: true });`
+   */
   const url = new URL(window.location.href);
   url.pathname = `/chat/${nextId}`;
 

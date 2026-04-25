@@ -6,7 +6,6 @@ import { IconButton } from '~/components/ui/IconButton';
 import { Workbench } from '~/components/workbench/Workbench.client';
 import { classNames } from '~/utils/classNames';
 import { GitHubImport } from './GitHubImport.client';
-import { LocalImport } from './LocalImport.client';
 import { Messages } from './Messages.client';
 import { SendButton } from './SendButton.client';
 
@@ -27,8 +26,12 @@ interface BaseChatProps {
   sendMessage?: (event: React.UIEvent, messageInput?: string) => void;
   handleInputChange?: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
   enhancePrompt?: () => void;
-  importFromGithub?: (result: any) => void | Promise<void>;
-  onLocalImport?: (files: { path: string; content: string }[]) => void | Promise<void>;
+  importFromGithub?: (result: {
+    owner: string;
+    repo: string;
+    ref: string;
+    files: { path: string; content: string }[];
+  }) => void | Promise<void>;
 }
 
 const EXAMPLE_PROMPTS = [
@@ -59,7 +62,6 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
       enhancePrompt,
       handleStop,
       importFromGithub,
-      onLocalImport,
     },
     ref,
   ) => {
@@ -85,14 +87,11 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                 <p className="mb-4 text-center text-bolt-elements-textSecondary">
                   Bring ideas to life in seconds or get help on existing projects.
                 </p>
-                <div className="flex flex-col items-center gap-4 mt-4">
-                  {importFromGithub && (
+                {importFromGithub && (
+                  <div className="flex justify-center mt-4">
                     <ClientOnly>{() => <GitHubImport onImport={importFromGithub} />}</ClientOnly>
-                  )}
-                  {onLocalImport && (
-                    <ClientOnly>{() => <LocalImport onImport={onLocalImport} />}</ClientOnly>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             )}
             <div

@@ -68,7 +68,7 @@ export default async function handleRequest(
 
   responseHeaders.set('Content-Type', 'text/html');
 
-  // Cabeçalhos críticos para suporte a WebContainer / SharedArrayBuffer
+  // Critical headers for WebContainer / SharedArrayBuffer support
   responseHeaders.set('Cross-Origin-Embedder-Policy', 'require-corp');
   responseHeaders.set('Cross-Origin-Opener-Policy', 'same-origin');
   responseHeaders.set('Cross-Origin-Resource-Policy', 'cross-origin');
