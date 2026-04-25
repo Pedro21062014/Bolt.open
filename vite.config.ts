@@ -25,6 +25,9 @@ export default defineConfig((config) => {
     build: {
       target: 'esnext',
     },
+    optimizeDeps: {
+      include: ['path-browserify'],
+    },
     plugins: [
       nodePolyfills({
         include: ['path', 'buffer', 'process'],

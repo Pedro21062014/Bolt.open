@@ -135,7 +135,7 @@ export async function writeEnvFile(envVars: EnvVar[]) {
   if (envVars.filter((v) => v.key.trim()).length === 0) return;
   const { webcontainer } = await import('~/lib/webcontainer');
   const { WORK_DIR } = await import('~/utils/constants');
-  const path = await import('path');
+  const nodePath = await import('node:path');
   const wc = await webcontainer;
-  await wc.fs.writeFile(path.join(WORK_DIR, '.env'), envVarsToFile(envVars));
+  await wc.fs.writeFile(nodePath.join(WORK_DIR, '.env'), envVarsToFile(envVars));
 }
