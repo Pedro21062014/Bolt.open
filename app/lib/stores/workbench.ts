@@ -12,7 +12,7 @@ import { TerminalStore } from './terminal';
 import { getSupabase } from '~/lib/supabase';
 import { activeProjectIdStore } from './project';
 import { WORK_DIR } from '~/utils/constants';
-import * as nodePath from 'node:path';
+import nodePath from 'path';
 
 export interface ArtifactState {
   id: string;
