@@ -111,7 +111,6 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
   useEffect(() => {
     chatStore.setKey('started', initialMessages.length > 0);
     
-    // Sincronizar arquivos do Supabase se houver um projeto ativo
     if (projectId && projectId !== 'default') {
       workbenchStore.loadProjectFiles(projectId).then(() => {
         logger.info('Project files synchronized from database');
@@ -201,22 +200,16 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
 
   const [messageRef, scrollRef] = useSnapScroll();
 
-  const importFromGithub = async (result: {
-    owner: string;
-    repo: string;
-    ref: string;
-    files: { path: string; content: string }[];
-  }) => {
+  const handleImportFiles = async (files: { path: string; content: string }[], source: string) => {
     const { webcontainer } = await import('~/lib/webcontainer');
     const { WORK_DIR } = await import('~/utils/constants');
     const nodePath = await import('node:path');
     const wc = await webcontainer;
 
-    // Limpar workspace antes de importar
     await workbenchStore.clearWorkspace();
 
     const dirs = new Set<string>();
-    for (const f of result.files) {
+    for (const f of files) {
       const dir = nodePath.dirname(f.path);
       if (dir && dir !== '.') dirs.add(dir);
     }
@@ -227,7 +220,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
     }
 
     let written = 0;
-    for (const f of result.files) {
+    for (const f of files) {
       try {
         await wc.fs.writeFile(f.path, f.content);
         const fullPath = nodePath.join(WORK_DIR, f.path);
@@ -239,31 +232,28 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
     }
 
     workbenchStore.showWorkbench.set(true);
-    const firstFile = result.files[0];
+    const firstFile = files[0];
     if (firstFile) {
       workbenchStore.setSelectedFile(nodePath.join(WORK_DIR, firstFile.path));
     }
 
-    const userMsg: Message = {
-      id: `user-${Date.now()}`,
-      role: 'user',
-      content: `Imported repository **${result.owner}/${result.repo}** (branch \`${result.ref}\`) from GitHub — ${written} files. Use the project as context for upcoming requests.`,
-    };
-    const assistantMsg: Message = {
-      id: `assistant-${Date.now()}`,
-      role: 'assistant',
-      content: `Loaded \`${result.owner}/${result.repo}@${result.ref}\` into the workspace (${written} files written). Tell me what you'd like to change.`,
-    };
-
-    setMessages([...messages, userMsg, assistantMsg]);
     runAnimation();
-    await storeMessageHistory([...messages, userMsg, assistantMsg]).catch(() => {});
-    toast.success(`${written} files written to workspace.`);
+
+    // Solicitar que a IA recrie os arquivos para sincronizar o contexto
+    const prompt = `I have imported a project from ${source} containing ${written} files. 
+    Please analyze the files in the workspace and recreate the entire project structure using a single comprehensive <boltArtifact> so that your internal state is perfectly synchronized with the current workspace.`;
+    
+    append({ role: 'user', content: prompt });
+    toast.success(`${written} files imported. AI is now syncing context...`);
   };
+
+  const importFromGithub = (result: any) => handleImportFiles(result.files, `GitHub (${result.owner}/${result.repo})`);
+  const onLocalImport = (files: { path: string; content: string }[]) => handleImportFiles(files, 'local source');
 
   return (
     <BaseChat
       importFromGithub={importFromGithub}
+      onLocalImport={onLocalImport}
       ref={animationScope}
       textareaRef={textareaRef}
       input={input}
