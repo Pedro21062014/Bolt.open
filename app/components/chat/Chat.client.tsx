@@ -111,7 +111,6 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
   useEffect(() => {
     chatStore.setKey('started', initialMessages.length > 0);
     
-    // Sincronizar arquivos do Supabase se houver um projeto ativo
     if (projectId && projectId !== 'default') {
       workbenchStore.loadProjectFiles(projectId).then(() => {
         logger.info('Project files synchronized from database');
@@ -201,7 +200,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
 
   const [messageRef, scrollRef] = useSnapScroll();
 
-  const importFromGithub = async (result: {
+  const importProject = async (result: {
     owner: string;
     repo: string;
     ref: string;
@@ -212,7 +211,6 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
     const nodePath = await import('node:path');
     const wc = await webcontainer;
 
-    // Limpar workspace antes de importar
     await workbenchStore.clearWorkspace();
 
     const dirs = new Set<string>();
@@ -244,26 +242,21 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
       workbenchStore.setSelectedFile(nodePath.join(WORK_DIR, firstFile.path));
     }
 
+    const fileList = result.files.map(f => f.path).join('\n');
     const userMsg: Message = {
       id: `user-${Date.now()}`,
       role: 'user',
-      content: `Imported repository **${result.owner}/${result.repo}** (branch \`${result.ref}\`) from GitHub — ${written} files. Use the project as context for upcoming requests.`,
-    };
-    const assistantMsg: Message = {
-      id: `assistant-${Date.now()}`,
-      role: 'assistant',
-      content: `Loaded \`${result.owner}/${result.repo}@${result.ref}\` into the workspace (${written} files written). Tell me what you'd like to change.`,
+      content: `Imported project with ${written} files. Please analyze the project structure and recreate the context. Here are the files:\n\n${fileList}`,
     };
 
-    setMessages([...messages, userMsg, assistantMsg]);
+    append(userMsg);
     runAnimation();
-    await storeMessageHistory([...messages, userMsg, assistantMsg]).catch(() => {});
     toast.success(`${written} files written to workspace.`);
   };
 
   return (
     <BaseChat
-      importFromGithub={importFromGithub}
+      importFromGithub={importProject}
       ref={animationScope}
       textareaRef={textareaRef}
       input={input}

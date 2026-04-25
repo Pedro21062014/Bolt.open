@@ -75,14 +75,14 @@ if (typeof window !== 'undefined') {
 export function getActiveProject(): ProjectRecord {
   const projects = projectsStore.get();
   const id = activeProjectIdStore.get();
-  return projects[id] ?? { id, name: '', settings: DEFAULT_SETTINGS };
+  return projects[id] ?? { id, name: '', settings: { ...DEFAULT_SETTINGS } };
 }
 
 export function setActiveProject(id: string, name = '') {
   activeProjectIdStore.set(id);
   const projects = projectsStore.get();
   if (!projects[id]) {
-    projectsStore.setKey(id, { id, name, settings: DEFAULT_SETTINGS });
+    projectsStore.setKey(id, { id, name, settings: { ...DEFAULT_SETTINGS } });
   }
 }
 
@@ -91,10 +91,9 @@ export async function updateActiveProjectSettings(patch: Partial<ProjectSettings
   const current = getActiveProject();
   
   const updatedSettings = {
-    ...DEFAULT_SETTINGS,
     ...current.settings,
     ...patch,
-    github: { ...DEFAULT_SETTINGS.github, ...current.settings.github, ...(patch.github ?? {}) },
+    github: { ...current.settings.github, ...(patch.github ?? {}) },
   };
 
   const updatedProject = {
@@ -105,7 +104,6 @@ export async function updateActiveProjectSettings(patch: Partial<ProjectSettings
 
   projectsStore.setKey(id, updatedProject);
 
-  // Persistência no Supabase
   const sb = getSupabase();
   const { user } = authStore.get();
 
@@ -119,14 +117,14 @@ export async function updateActiveProjectSettings(patch: Partial<ProjectSettings
       github_repo: updatedSettings.github.repo,
       github_branch: updatedSettings.github.branch,
       github_token: updatedSettings.github.token,
-      updated_at: new Error().stack?.includes('saveProject') ? new Date().toISOString() : undefined
+      updated_at: new Date().toISOString()
     };
 
     if (id !== 'default' && id.length > 10) {
       await sb.from('projects').upsert({ id, ...projectData });
     } else {
-      const { data } = await sb.from('projects').insert(projectData).select().single();
-      if (data) {
+      const { data, error } = await sb.from('projects').insert(projectData).select().single();
+      if (data && !error) {
         activeProjectIdStore.set(data.id);
         projectsStore.setKey(data.id, { ...updatedProject, id: data.id });
       }
