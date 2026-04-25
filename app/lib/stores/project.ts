@@ -105,8 +105,7 @@ export async function updateActiveProjectSettings(patch: Partial<ProjectSettings
 
   projectsStore.setKey(id, updatedProject);
 
-  // Persistência no Supabase
-  const sb = getSupabase();
+  // Persist to Supabase  const sb = getSupabase();
   const { user } = authStore.get();
 
   if (sb && user) {
@@ -119,7 +118,7 @@ export async function updateActiveProjectSettings(patch: Partial<ProjectSettings
       github_repo: updatedSettings.github.repo,
       github_branch: updatedSettings.github.branch,
       github_token: updatedSettings.github.token,
-      updated_at: new Error().stack?.includes('saveProject') ? new Date().toISOString() : undefined
+      updated_at: new Date().toISOString(),
     };
 
     if (id !== 'default' && id.length > 10) {

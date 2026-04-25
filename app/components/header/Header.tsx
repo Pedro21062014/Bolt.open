@@ -8,6 +8,7 @@ import { ModelPicker } from './ModelPicker.client';
 import { SettingsDialog } from './SettingsDialog.client';
 import { GitHubPush } from '~/components/chat/GitHubPush.client';
 import { ChatDescription } from '~/lib/persistence/ChatDescription.client';
+import { SaveProjectButton } from './SaveProjectButton.client';
 
 export function Header() {
   const chat = useStore(chatStore);
@@ -39,7 +40,8 @@ export function Header() {
               {chat.started && <GitHubPush />}
               <SettingsDialog />
               <AuthButton />
-              {chat.started && <HeaderActionButtons />}
+              <HeaderActionButtons />
+              <SaveProjectButton />
             </>
           )}
         </ClientOnly>

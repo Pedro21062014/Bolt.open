@@ -17,7 +17,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
   response.headers.set('Cross-Origin-Opener-Policy', 'same-origin');
   response.headers.set('Cross-Origin-Resource-Policy', 'cross-origin');
 
-  // Also ensure no-cors restrictions don't block us
+  // Ensure CORS is permissive for WebContainer worker scripts
   if (!response.headers.has('Access-Control-Allow-Origin')) {
     response.headers.set('Access-Control-Allow-Origin', '*');
   }
