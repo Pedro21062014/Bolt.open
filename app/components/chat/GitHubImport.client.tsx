@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { toast } from 'react-toastify';
 import { githubProviderTokenStore } from '~/lib/stores/auth';
 import { GitHubRepoSelect } from './GitHubRepoSelect.client';
+import { ImportDialog } from './ImportDialog.client';
 
 interface ImportedFile {
   path: string;
@@ -28,6 +29,7 @@ export function GitHubImport({ onImport, trigger }: GitHubImportProps) {
   const [repo, setRepo] = useState('');
   const [token, setToken] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
 
   async function submit() {
     if (!repo.trim()) return;
@@ -58,20 +60,29 @@ export function GitHubImport({ onImport, trigger }: GitHubImportProps) {
           {trigger}
         </span>
       ) : (
-        <button
-          onClick={() => setOpen(true)}
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm border border-bolt-elements-borderColor text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-theme"
-        >
-          <div className="i-ph:github-logo text-base" />
-          Import from GitHub
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setOpen(true)}
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm border border-bolt-elements-borderColor text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-theme"
+          >
+            <div className="i-ph:github-logo text-base" />
+            Import from GitHub
+          </button>
+          <button
+            onClick={() => setShowImportDialog(true)}
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm border border-bolt-elements-borderColor text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-theme"
+          >
+            <div className="i-ph:folder-open text-base" />
+            Import Local
+          </button>
+        </div>
       )}
 
       {open && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50" onClick={() => !loading && setOpen(false)}>
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-[460px] max-w-[90vw] rounded-lg border border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 shadow-xl p-5 space-y-4"
+            className="w-[460px] max-w-[92vw] rounded-lg border border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 shadow-xl p-5 space-y-4"
           >
             <div className="flex items-center gap-2">
               <div className="i-ph:github-logo text-2xl text-bolt-elements-textPrimary" />
@@ -126,6 +137,21 @@ export function GitHubImport({ onImport, trigger }: GitHubImportProps) {
           </div>
         </div>
       )}
+
+      <ImportDialog
+        open={showImportDialog}
+        onClose={() => setShowImportDialog(false)}
+        onImport={async (result) => {
+          await onImport({
+            owner: 'local',
+            repo: 'local',
+            ref: 'main',
+            files: result.files,
+            stats: result.stats,
+          });
+          setShowImportDialog(false);
+        }}
+      />
     </>
   );
 }
