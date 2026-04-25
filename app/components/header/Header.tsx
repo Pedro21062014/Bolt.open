@@ -8,9 +8,20 @@ import { ModelPicker } from './ModelPicker.client';
 import { SettingsDialog } from './SettingsDialog.client';
 import { GitHubPush } from '~/components/chat/GitHubPush.client';
 import { ChatDescription } from '~/lib/persistence/ChatDescription.client';
+import { workbenchStore } from '~/lib/stores/workbench';
+import { toast } from 'react-toastify';
 
 export function Header() {
   const chat = useStore(chatStore);
+
+  const handleSaveAll = async () => {
+    try {
+      await workbenchStore.saveAllFiles();
+      toast.success('Project and files saved successfully!');
+    } catch (err) {
+      toast.error('Failed to save project');
+    }
+  };
 
   return (
     <header
@@ -36,6 +47,16 @@ export function Header() {
           {() => (
             <>
               <ModelPicker />
+              {chat.started && (
+                <button
+                  onClick={handleSaveAll}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent border border-bolt-elements-item-contentAccent hover:brightness-110 transition-all"
+                  title="Save all files and settings"
+                >
+                  <div className="i-ph:floppy-disk-bold" />
+                  <span className="hidden md:inline">Save App</span>
+                </button>
+              )}
               {chat.started && <GitHubPush />}
               <SettingsDialog />
               <AuthButton />
