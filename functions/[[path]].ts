@@ -6,15 +6,21 @@ import * as serverBuild from '../build/server';
 
 const handler = createPagesFunctionHandler({
   build: serverBuild as unknown as ServerBuild,
+  mode: 'production',
 });
 
 export const onRequest: PagesFunction<Env> = async (context) => {
   const response = await handler(context);
-  
-  // Inject headers required for SharedArrayBuffer and WebContainers
+
+  // Critical: Enable cross-origin isolation for SharedArrayBuffer (required by WebContainers)
   response.headers.set('Cross-Origin-Embedder-Policy', 'require-corp');
   response.headers.set('Cross-Origin-Opener-Policy', 'same-origin');
   response.headers.set('Cross-Origin-Resource-Policy', 'cross-origin');
-  
+
+  // Also ensure no-cors restrictions don't block us
+  if (!response.headers.has('Access-Control-Allow-Origin')) {
+    response.headers.set('Access-Control-Allow-Origin', '*');
+  }
+
   return response;
 };
