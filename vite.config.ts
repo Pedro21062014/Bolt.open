@@ -27,8 +27,16 @@ export default defineConfig((config) => {
     },
     optimizeDeps: {
       include: ['path-browserify'],
+      esbuildOptions: {
+        // Força o esbuild a converter o CommonJS do path-browserify para ESM
+        define: {
+          'module.exports': 'module.exports',
+        },
+      },
     },
     ssr: {
+      // Garante que o path-browserify seja tratado como um módulo externo,
+      // mas a conversão já aconteceu no optimizeDeps
       noExternal: ['path-browserify'],
     },
     plugins: [
