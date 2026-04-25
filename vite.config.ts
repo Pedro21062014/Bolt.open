@@ -28,6 +28,9 @@ export default defineConfig((config) => {
     optimizeDeps: {
       include: ['path-browserify'],
     },
+    ssr: {
+      noExternal: ['path-browserify'],
+    },
     plugins: [
       nodePolyfills({
         include: ['path', 'buffer', 'process'],
