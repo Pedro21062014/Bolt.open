@@ -59,6 +59,8 @@ export function SettingsDialog() {
   const [pLogo, setPLogo] = useState(active.settings.logo);
   const [pEnv, setPEnv] = useState<EnvVar[]>(active.settings.envVars);
 
+  const isProjectActive = projectId && projectId !== 'default';
+
   useEffect(() => {
     if (open) {
       setDrafts(keys);
@@ -69,6 +71,12 @@ export function SettingsDialog() {
       setPEnv(current.settings.envVars.length ? current.settings.envVars : []);
     }
   }, [open, keys, projectId, projects]);
+
+  useEffect(() => {
+    if (!isProjectActive && tab === 'project') {
+      setTab('keys');
+    }
+  }, [isProjectActive, tab]);
 
   async function saveAndTest(provider: ProviderId) {
     const value = drafts[provider].trim();
@@ -154,7 +162,7 @@ export function SettingsDialog() {
             <div className="flex gap-1 px-5 mt-4 border-b border-bolt-elements-borderColor">
               {[
                 { id: 'keys' as Tab, label: 'API Keys' },
-                { id: 'project' as Tab, label: 'Project' },
+                ...(isProjectActive ? [{ id: 'project' as Tab, label: 'Project' }] : []),
               ].map((t) => (
                 <button
                   key={t.id}
@@ -232,7 +240,7 @@ export function SettingsDialog() {
               </div>
             )}
 
-            {tab === 'project' && (
+            {tab === 'project' && isProjectActive && (
               <div className="p-5 space-y-4">
                 <div className="flex items-start gap-4">
                   <div className="flex flex-col items-center gap-2">
