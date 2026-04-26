@@ -70,18 +70,16 @@ export function ModelPicker() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-theme border border-bolt-elements-borderColor bg-bolt-elements-background-depth-1"
+        className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-theme border border-bolt-elements-borderColor bg-bolt-elements-background-depth-1"
         title="Select model"
       >
-        <div className="i-ph:cpu text-base" />
-        <span className="font-medium hidden sm:inline">{PROVIDER_LABELS[provider]}</span>
-        <span className="opacity-60 hidden sm:inline">/</span>
-        <span className="truncate max-w-[220px]">{currentLabel}</span>
-        <div className={`i-ph:caret-down text-xs transition-transform ${open ? 'rotate-180' : ''}`} />
+        <div className="i-ph:cpu text-sm" />
+        <span className="font-medium truncate max-w-[120px]">{currentLabel}</span>
+        <div className={`i-ph:caret-up text-[10px] transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-[380px] z-dropdown rounded-lg border border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 shadow-lg overflow-hidden">
+        <div className="absolute left-0 bottom-full mb-2 w-[320px] z-dropdown rounded-lg border border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 shadow-lg overflow-hidden">
           <div className="p-2 border-b border-bolt-elements-borderColor">
             <input
               autoFocus
@@ -92,10 +90,10 @@ export function ModelPicker() {
             />
           </div>
 
-          <div className="max-h-[400px] overflow-y-auto">
+          <div className="max-h-[300px] overflow-y-auto">
             {configuredCount === 0 ? (
               <div className="p-4 text-xs text-bolt-elements-textTertiary text-center">
-                No API keys configured. Open <span className="i-ph:gear inline-block align-text-bottom" /> Settings in the header to add one.
+                No API keys configured. Open Settings to add one.
               </div>
             ) : flat.length === 0 ? (
               <div className="p-4 text-xs text-bolt-elements-textTertiary text-center">
@@ -107,7 +105,7 @@ export function ModelPicker() {
                 if (items.length === 0) return null;
                 return (
                   <div key={p}>
-                    <div className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-bolt-elements-textTertiary bg-bolt-elements-background-depth-1 sticky top-0 flex items-center justify-between">
+                    <div className="px-3 py-1.5 text-[9px] uppercase tracking-wider text-bolt-elements-textTertiary bg-bolt-elements-background-depth-1 sticky top-0 flex items-center justify-between">
                       <span>{PROVIDER_LABELS[p]}</span>
                       <span>{items.length}</span>
                     </div>
@@ -120,12 +118,12 @@ export function ModelPicker() {
                             selectProviderModel(o.provider, o.id);
                             setOpen(false);
                           }}
-                          className={`w-full text-left px-3 py-2 text-xs flex flex-col gap-0.5 hover:bg-bolt-elements-item-backgroundActive transition-theme ${
+                          className={`w-full text-left px-3 py-2 text-[11px] flex flex-col gap-0.5 hover:bg-bolt-elements-item-backgroundActive transition-theme ${
                             active ? 'bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent' : 'text-bolt-elements-textPrimary'
                           }`}
                         >
                           <span className="font-medium truncate">{o.label}</span>
-                          <span className="text-[10px] opacity-60 truncate">{o.id}</span>
+                          <span className="text-[9px] opacity-60 truncate">{o.id}</span>
                         </button>
                       );
                     })}
@@ -135,8 +133,8 @@ export function ModelPicker() {
             )}
           </div>
 
-          <div className="px-3 py-2 border-t border-bolt-elements-borderColor flex items-center justify-between text-[11px] text-bolt-elements-textTertiary">
-            <span>{flat.length} model{flat.length === 1 ? '' : 's'} from {configuredCount} provider{configuredCount === 1 ? '' : 's'}</span>
+          <div className="px-3 py-2 border-t border-bolt-elements-borderColor flex items-center justify-between text-[10px] text-bolt-elements-textTertiary">
+            <span>{flat.length} models</span>
             <button
               onClick={() => refreshAllConfiguredModels()}
               disabled={isAnyLoading || configuredCount === 0}

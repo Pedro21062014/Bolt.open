@@ -8,6 +8,7 @@ import { classNames } from '~/utils/classNames';
 import { GitHubImport } from './GitHubImport.client';
 import { Messages } from './Messages.client';
 import { SendButton } from './SendButton.client';
+import { ModelPicker } from '../header/ModelPicker.client';
 
 import styles from './BaseChat.module.scss';
 
@@ -163,7 +164,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                     )}
                   </ClientOnly>
                   <div className="flex justify-between text-sm p-4 pt-2">
-                    <div className="flex gap-1 items-center">
+                    <div className="flex gap-2 items-center">
                       <IconButton
                         title="Enhance prompt"
                         disabled={input.length === 0 || enhancingPrompt}
@@ -186,6 +187,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                           </>
                         )}
                       </IconButton>
+                      <ClientOnly>{() => <ModelPicker />}</ClientOnly>
                     </div>
                     {input.length > 3 ? (
                       <div className="text-xs text-bolt-elements-textTertiary">

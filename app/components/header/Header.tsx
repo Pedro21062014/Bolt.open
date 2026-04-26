@@ -4,7 +4,6 @@ import { chatStore } from '~/lib/stores/chat';
 import { classNames } from '~/utils/classNames';
 import { AuthButton } from './AuthButton.client';
 import { HeaderActionButtons } from './HeaderActionButtons.client';
-import { ModelPicker } from './ModelPicker.client';
 import { SettingsDialog } from './SettingsDialog.client';
 import { GitHubPush } from '~/components/chat/GitHubPush.client';
 import { ChatDescription } from '~/lib/persistence/ChatDescription.client';
@@ -36,7 +35,6 @@ export function Header() {
         <ClientOnly>
           {() => (
             <>
-              <ModelPicker />
               {chat.started && <GitHubPush />}
               <SettingsDialog />
               <AuthButton />
