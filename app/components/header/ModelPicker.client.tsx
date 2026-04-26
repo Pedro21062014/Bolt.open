@@ -66,7 +66,7 @@ export function ModelPicker() {
   const currentLabel = flat.find((o) => o.provider === provider && o.id === model)?.label || model || 'Select model';
 
   return (
-    <div ref={ref} className="relative z-dropdown">
+    <div ref={ref} className="relative z-[1000]">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -79,7 +79,7 @@ export function ModelPicker() {
       </button>
 
       {open && (
-        <div className="absolute left-0 bottom-full mb-2 w-[320px] z-dropdown rounded-lg border border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 shadow-lg overflow-hidden">
+        <div className="absolute left-0 bottom-full mb-2 w-[320px] z-[1001] rounded-lg border border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 shadow-xl overflow-hidden">
           <div className="p-2 border-b border-bolt-elements-borderColor">
             <input
               autoFocus

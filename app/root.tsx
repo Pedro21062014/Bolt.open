@@ -58,7 +58,7 @@ export const Head = createHead(() => (
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <Meta />
     <Links />
-    <script src="/coi-serviceworker.js" async></script>
+    <script src="/coi-serviceworker.js"></script>
     <script dangerouslySetInnerHTML={{ __html: inlineThemeCode }} />
   </>
 ));
