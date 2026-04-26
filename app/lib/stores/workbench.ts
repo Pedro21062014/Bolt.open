@@ -273,6 +273,27 @@ export class WorkbenchStore {
     }
   }
 
+  async saveEntireProject() {
+    const sb = getSupabase();
+    const projectId = activeProjectIdStore.get();
+    if (!sb || projectId === 'default') return;
+
+    const files = this.files.get();
+    const fileEntries = Object.entries(files).filter(([_, dirent]) => dirent?.type === 'file');
+
+    for (const [path, dirent] of fileEntries) {
+      if (dirent?.type === 'file') {
+        await sb.from('project_files').upsert({
+          project_id: projectId,
+          path: path,
+          content: dirent.content,
+          is_binary: dirent.isBinary,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'project_id,path' });
+      }
+    }
+  }
+
   getFileModifcations() {
     return this.#filesStore.getFileModifications();
   }
