@@ -12,6 +12,19 @@ import { ModelPicker } from '../header/ModelPicker.client';
 
 import styles from './BaseChat.module.scss';
 
+interface ImportedFile {
+  path: string;
+  content: string;
+}
+
+interface ImportResult {
+  files: ImportedFile[];
+  stats: { totalBlobs: number; imported: number; skipped: number; truncated: boolean };
+  owner?: string;
+  repo?: string;
+  ref?: string;
+}
+
 interface BaseChatProps {
   textareaRef?: React.RefObject<HTMLTextAreaElement> | undefined;
   messageRef?: RefCallback<HTMLDivElement> | undefined;
@@ -27,12 +40,7 @@ interface BaseChatProps {
   sendMessage?: (event: React.UIEvent, messageInput?: string) => void;
   handleInputChange?: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
   enhancePrompt?: () => void;
-  importFromGithub?: (result: {
-    owner: string;
-    repo: string;
-    ref: string;
-    files: { path: string; content: string }[];
-  }) => void | Promise<void>;
+  importFromGithub?: (result: ImportResult) => void | Promise<void>;
 }
 
 const EXAMPLE_PROMPTS = [

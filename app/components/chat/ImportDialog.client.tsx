@@ -46,30 +46,25 @@ export function ImportDialog({ open, onClose, onImport }: ImportDialogProps) {
   };
 
   const handleFolderImport = async () => {
-    if (!folderPath) return;
     setLoading(true);
     try {
-      // Use the File System Access API to read a directory
       const directory = await (window as any).showDirectoryPicker();
       const files: ImportedFile[] = [];
-      const skipped = 0;
-      const processEntry = async (entry: FileSystemDirectoryEntry | FileSystemFileEntry, path = '') => {
-        if (entry.isFile) {
-          const file = await (entry as FileSystemFileEntry).file();
+      let skipped = 0;
+      
+      const processEntry = async (entry: any, path = '') => {
+        if (entry.kind === 'file') {
+          const file = await entry.getFile();
           if (file.size > 200 * 1024) { skipped++; return; }
           const content = await file.text();
           files.push({ path: `${path}${file.name}`, content });
-        } else if (entry.isDirectory) {
-          const dirEntry = entry as FileSystemDirectoryEntry;
-          const dirReader = dirEntry.createReader();
-          const entries = await new Promise<FileSystemEntry[]>((resolve) => {
-            dirReader.readEntries(resolve);
-          });
-          for (const child of entries) {
-            await processEntry(child, `${path}${dirEntry.name}/`);
+        } else if (entry.kind === 'directory') {
+          for await (const child of entry.values()) {
+            await processEntry(child, `${path}${entry.name}/`);
           }
         }
       };
+      
       await processEntry(directory);
       const result: ImportResult = {
         files,

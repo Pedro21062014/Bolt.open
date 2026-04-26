@@ -34,15 +34,14 @@ export async function action({ request }: ActionFunctionArgs) {
     let skipped = 0;
 
     for (const [path, entry] of Object.entries(entries)) {
-      if (entry.isFile) {
-        const file = entry.file;
-        if (file.size > 200 * 1024) { // Skip files larger than 200KB
-          skipped++;
-          continue;
-        }
-        const content = await file.text();
-        files.push({ path, content });
+      if (path.endsWith('/')) continue;
+      
+      if (entry.size > 200 * 1024) { // Skip files larger than 200KB
+        skipped++;
+        continue;
       }
+      const content = await entry.text();
+      files.push({ path, content });
     }
 
     const result: ImportResult = {

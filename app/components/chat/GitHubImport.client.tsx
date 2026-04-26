@@ -168,8 +168,7 @@ export function GitHubImport({ onImport, trigger }: GitHubImportProps) {
         type="file"
         ref={folderInputRef}
         onChange={handleFolderChange}
-        webkitdirectory=""
-        directory=""
+        {...({ webkitdirectory: "", directory: "" } as any)}
         className="hidden"
       />
 

@@ -34,7 +34,7 @@ export function streamText(messages: Messages, selection: ModelSelection, option
   }
 
   return _streamText({
-    model: getModel(selection.provider, selection.model, selection.apiKey),
+    model: getModel(selection.provider, selection.model, selection.apiKey) as any,
     system: getSystemPrompt(),
     maxTokens: MAX_TOKENS,
     ...extra,

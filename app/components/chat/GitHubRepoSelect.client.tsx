@@ -1,5 +1,5 @@
 import { useStore } from '@nanostores/react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { githubProviderTokenStore } from '~/lib/stores/auth';
 
 interface Repo {
@@ -32,8 +32,8 @@ export function GitHubRepoSelect({ value, onChange, placeholder = 'owner/name', 
     fetch('https://api.github.com/user/repos?per_page=100&sort=updated', {
       headers: { Authorization: `Bearer ${ghToken}`, Accept: 'application/vnd.github+json' },
     })
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
-      .then((data: Repo[]) => {
+      .then((r) => (r.ok ? (r.json() as Promise<Repo[]>) : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then((data) => {
         cache = data;
         setRepos(data);
       })
