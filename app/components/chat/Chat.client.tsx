@@ -111,7 +111,6 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
   useEffect(() => {
     chatStore.setKey('started', initialMessages.length > 0);
     
-    // Sincronizar arquivos do Supabase se houver um projeto ativo
     if (projectId && projectId !== 'default') {
       workbenchStore.loadProjectFiles(projectId).then(() => {
         logger.info('Project files synchronized from database');
@@ -204,7 +203,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
   const importFromGithub = async (result: {
     owner: string;
     repo: string;
-    ref: string;
+    ref?: string;
     files: { path: string; content: string }[];
   }) => {
     const { webcontainer } = await import('~/lib/webcontainer');
@@ -212,7 +211,6 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
     const nodePath = await import('node:path');
     const wc = await webcontainer;
 
-    // Limpar workspace antes de importar
     await workbenchStore.clearWorkspace();
 
     const dirs = new Set<string>();
@@ -244,21 +242,17 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
       workbenchStore.setSelectedFile(nodePath.join(WORK_DIR, firstFile.path));
     }
 
-    const userMsg: Message = {
-      id: `user-${Date.now()}`,
-      role: 'user',
-      content: `Imported repository **${result.owner}/${result.repo}** (branch \`${result.ref}\`) from GitHub — ${written} files. Use the project as context for upcoming requests.`,
-    };
-    const assistantMsg: Message = {
-      id: `assistant-${Date.now()}`,
-      role: 'assistant',
-      content: `Loaded \`${result.owner}/${result.repo}@${result.ref}\` into the workspace (${written} files written). Tell me what you'd like to change.`,
-    };
-
-    setMessages([...messages, userMsg, assistantMsg]);
     runAnimation();
-    await storeMessageHistory([...messages, userMsg, assistantMsg]).catch(() => {});
-    toast.success(`${written} files written to workspace.`);
+
+    // Trigger AI to analyze and recreate/improve the project
+    const prompt = `I have imported a project from ${result.owner}/${result.repo}. 
+    There are ${written} files loaded in the workspace. 
+    Please analyze the project structure and files, then provide a comprehensive update to ensure everything is correctly configured and optimized. 
+    Recreate or update any necessary files to make the project fully functional in this environment.`;
+
+    append({ role: 'user', content: prompt });
+    
+    toast.success(`${written} files written to workspace. AI is analyzing...`);
   };
 
   return (

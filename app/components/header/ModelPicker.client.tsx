@@ -28,7 +28,6 @@ export function ModelPicker() {
 
   useEffect(() => {
     refreshAllConfiguredModels();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keys.anthropic, keys.openrouter, keys.google]);
 
   useEffect(() => {
@@ -67,7 +66,7 @@ export function ModelPicker() {
   const currentLabel = flat.find((o) => o.provider === provider && o.id === model)?.label || model || 'Select model';
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative z-dropdown">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -82,7 +81,7 @@ export function ModelPicker() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-[380px] z-50 rounded-lg border border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 shadow-lg overflow-hidden">
+        <div className="absolute right-0 top-full mt-2 w-[380px] z-dropdown rounded-lg border border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 shadow-lg overflow-hidden">
           <div className="p-2 border-b border-bolt-elements-borderColor">
             <input
               autoFocus
