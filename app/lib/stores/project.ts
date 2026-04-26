@@ -105,7 +105,8 @@ export async function updateActiveProjectSettings(patch: Partial<ProjectSettings
 
   projectsStore.setKey(id, updatedProject);
 
-  // Persist to Supabase  const sb = getSupabase();
+  // Persist to Supabase
+  const sb = getSupabase();
   const { user } = authStore.get();
 
   if (sb && user) {
