@@ -16,6 +16,12 @@ interface FlatOption {
   label: string;
 }
 
+const PROVIDER_LOGOS: Record<ProviderId, string> = {
+  google: 'https://img.icons8.com/?size=100&id=mrNoLXFmvXDX&format=png&color=000000',
+  openrouter: 'https://raw.githubusercontent.com/lobehub/lobe-icons/refs/heads/master/packages/static-png/light/openrouter.png',
+  anthropic: 'https://img.icons8.com/?size=100&id=zQjzFjPpT2Ek&format=png&color=000000',
+};
+
 export function ModelPicker() {
   const { provider, model, keys } = useStore(llmStore);
   const allModels = useStore(modelsStore);
@@ -70,10 +76,10 @@ export function ModelPicker() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-theme border border-bolt-elements-borderColor bg-bolt-elements-background-depth-1"
+        className="flex items-center gap-2 px-2 py-1 rounded-md text-[11px] text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive transition-theme border border-bolt-elements-borderColor bg-bolt-elements-background-depth-1"
         title="Select model"
       >
-        <div className="i-ph:cpu text-sm" />
+        <img src={PROVIDER_LOGOS[provider]} alt={provider} className="w-4 h-4 object-contain" />
         <span className="font-medium truncate max-w-[120px]">{currentLabel}</span>
         <div className={`i-ph:caret-up text-[10px] transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
@@ -106,7 +112,10 @@ export function ModelPicker() {
                 return (
                   <div key={p}>
                     <div className="px-3 py-1.5 text-[9px] uppercase tracking-wider text-bolt-elements-textTertiary bg-bolt-elements-background-depth-1 sticky top-0 flex items-center justify-between">
-                      <span>{PROVIDER_LABELS[p]}</span>
+                      <div className="flex items-center gap-2">
+                        <img src={PROVIDER_LOGOS[p]} alt={p} className="w-3 h-3 object-contain" />
+                        <span>{PROVIDER_LABELS[p]}</span>
+                      </div>
                       <span>{items.length}</span>
                     </div>
                     {items.map((o) => {
