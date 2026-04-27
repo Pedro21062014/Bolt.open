@@ -4,11 +4,15 @@ import { IconButton } from '~/components/ui/IconButton';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { PortDropdown } from './PortDropdown';
 
+type DeviceType = 'desktop' | 'tablet' | 'mobile';
+
 export const Preview = memo(() => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
   const [activePreviewIndex, setActivePreviewIndex] = useState(0);
   const [isPortDropdownOpen, setIsPortDropdownOpen] = useState(false);
+  const [device, setDevice] = useState<DeviceType>('desktop');
+  const [isLandscape, setIsLandscape] = useState(false);
+  
   const hasSelectedPreview = useRef(false);
   const previews = useStore(workbenchStore.previews);
   const activePreview = previews[activePreviewIndex];
@@ -20,87 +24,44 @@ export const Preview = memo(() => {
     if (!activePreview) {
       setUrl('');
       setIframeUrl(undefined);
-
       return;
     }
-
-    const { baseUrl } = activePreview;
-
-    setUrl(baseUrl);
-    setIframeUrl(baseUrl);
-  }, [activePreview, iframeUrl]);
-
-  const validateUrl = useCallback(
-    (value: string) => {
-      if (!activePreview) {
-        return false;
-      }
-
-      const { baseUrl } = activePreview;
-
-      if (value === baseUrl) {
-        return true;
-      } else if (value.startsWith(baseUrl)) {
-        return ['/', '?', '#'].includes(value.charAt(baseUrl.length));
-      }
-
-      return false;
-    },
-    [activePreview],
-  );
-
-  const findMinPortIndex = useCallback(
-    (minIndex: number, preview: { port: number }, index: number, array: { port: number }[]) => {
-      return preview.port < array[minIndex].port ? index : minIndex;
-    },
-    [],
-  );
-
-  // when previews change, display the lowest port if user hasn't selected a preview
-  useEffect(() => {
-    if (previews.length > 1 && !hasSelectedPreview.current) {
-      const minPortIndex = previews.reduce(findMinPortIndex, 0);
-
-      setActivePreviewIndex(minPortIndex);
-    }
-  }, [previews]);
+    setUrl(activePreview.baseUrl);
+    setIframeUrl(activePreview.baseUrl);
+  }, [activePreview]);
 
   const reloadPreview = () => {
-    if (iframeRef.current) {
-      iframeRef.current.src = iframeRef.current.src;
-    }
+    if (iframeRef.current) iframeRef.current.src = iframeRef.current.src;
+  };
+
+  const openInNewTab = () => {
+    if (iframeUrl) window.open(iframeUrl, '_blank');
+  };
+
+  const getDeviceStyles = () => {
+    if (device === 'mobile') return isLandscape ? 'w-[844px] h-[390px]' : 'w-[390px] h-[844px]';
+    if (device === 'tablet') return isLandscape ? 'w-[1024px] h-[768px]' : 'w-[768px] h-[1024px]';
+    return 'w-full h-full';
   };
 
   return (
-    <div className="w-full h-full flex flex-col">
-      {isPortDropdownOpen && (
-        <div className="z-iframe-overlay w-full h-full absolute" onClick={() => setIsPortDropdownOpen(false)} />
-      )}
-      <div className="bg-bolt-elements-background-depth-2 p-2 flex items-center gap-1.5">
+    <div className="w-full h-full flex flex-col bg-bolt-elements-background-depth-1">
+      <div className="bg-bolt-elements-background-depth-2 p-2 flex items-center gap-2 border-b border-bolt-elements-borderColor">
         <IconButton icon="i-ph:arrow-clockwise" onClick={reloadPreview} />
-        <div
-          className="flex items-center gap-1 flex-grow bg-bolt-elements-preview-addressBar-background border border-bolt-elements-borderColor text-bolt-elements-preview-addressBar-text rounded-full px-3 py-1 text-sm hover:bg-bolt-elements-preview-addressBar-backgroundHover hover:focus-within:bg-bolt-elements-preview-addressBar-backgroundActive focus-within:bg-bolt-elements-preview-addressBar-backgroundActive
-        focus-within-border-bolt-elements-borderColorActive focus-within:text-bolt-elements-preview-addressBar-textActive"
-        >
-          <input
-            ref={inputRef}
-            className="w-full bg-transparent outline-none"
-            type="text"
-            value={url}
-            onChange={(event) => {
-              setUrl(event.target.value);
-            }}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' && validateUrl(url)) {
-                setIframeUrl(url);
-
-                if (inputRef.current) {
-                  inputRef.current.blur();
-                }
-              }
-            }}
-          />
+        <IconButton icon="i-ph:arrow-square-out" onClick={openInNewTab} title="Open in new tab" />
+        
+        <div className="flex items-center gap-1 bg-bolt-elements-background-depth-3 rounded-md p-0.5">
+          <IconButton icon="i-ph:monitor" onClick={() => setDevice('desktop')} className={device === 'desktop' ? 'bg-bolt-elements-item-backgroundActive' : ''} />
+          <IconButton icon="i-ph:tablet" onClick={() => setDevice('tablet')} className={device === 'tablet' ? 'bg-bolt-elements-item-backgroundActive' : ''} />
+          <IconButton icon="i-ph:device-mobile" onClick={() => setDevice('mobile')} className={device === 'mobile' ? 'bg-bolt-elements-item-backgroundActive' : ''} />
         </div>
+
+        {device !== 'desktop' && (
+          <IconButton icon="i-ph:arrows-clockwise" onClick={() => setIsLandscape(!isLandscape)} title="Rotate" />
+        )}
+
+        <div className="flex-grow" />
+        
         {previews.length > 1 && (
           <PortDropdown
             activePreviewIndex={activePreviewIndex}
@@ -112,11 +73,14 @@ export const Preview = memo(() => {
           />
         )}
       </div>
-      <div className="flex-1 border-t border-bolt-elements-borderColor">
+
+      <div className="flex-1 flex items-center justify-center overflow-auto p-4">
         {activePreview ? (
-          <iframe ref={iframeRef} className="border-none w-full h-full bg-white" src={iframeUrl} />
+          <div className={`transition-all duration-300 shadow-2xl border-4 border-bolt-elements-borderColor rounded-lg overflow-hidden ${getDeviceStyles()}`}>
+            <iframe ref={iframeRef} className="w-full h-full bg-white" src={iframeUrl} />
+          </div>
         ) : (
-          <div className="flex w-full h-full justify-center items-center bg-white">No preview available</div>
+          <div className="text-bolt-elements-textTertiary">No preview available</div>
         )}
       </div>
     </div>
