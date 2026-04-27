@@ -1,16 +1,19 @@
 import { useStore } from '@nanostores/react';
+import { useState } from 'react';
 import { ClientOnly } from 'remix-utils/client-only';
 import { chatStore } from '~/lib/stores/chat';
 import { classNames } from '~/utils/classNames';
 import { AuthButton } from './AuthButton.client';
 import { HeaderActionButtons } from './HeaderActionButtons.client';
 import { SettingsDialog } from './SettingsDialog.client';
+import { AppSettingsDialog } from './AppSettingsDialog.client';
 import { GitHubPush } from '~/components/chat/GitHubPush.client';
 import { ChatDescription } from '~/lib/persistence/ChatDescription.client';
 import { SaveProjectButton } from './SaveProjectButton.client';
 
 export function Header() {
   const chat = useStore(chatStore);
+  const [appSettingsOpen, setAppSettingsOpen] = useState(false);
 
   return (
     <header
@@ -35,11 +38,23 @@ export function Header() {
         <ClientOnly>
           {() => (
             <>
-              {chat.started && <GitHubPush />}
+              {chat.started && (
+                <>
+                  <SaveProjectButton />
+                  <GitHubPush />
+                </>
+              )}
+              <button
+                onClick={() => setAppSettingsOpen(true)}
+                className="flex items-center justify-center w-8 h-8 rounded-md text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive border border-bolt-elements-borderColor transition-theme"
+                title="App Settings"
+              >
+                <div className="i-ph:sliders-horizontal text-base" />
+              </button>
               <SettingsDialog />
               <AuthButton />
               <HeaderActionButtons />
-              <SaveProjectButton />
+              <AppSettingsDialog open={appSettingsOpen} onClose={() => setAppSettingsOpen(false)} />
             </>
           )}
         </ClientOnly>

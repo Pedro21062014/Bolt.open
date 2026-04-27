@@ -13,7 +13,7 @@ export const SaveProjectButton = memo(({}: SaveProjectButtonProps) => {
   
   const currentProject = projects[activeId];
 
-  // Only show if we have an active project that isn't the default one
+  // Show a placeholder or nothing if no project is active
   if (!activeId || activeId === 'default') {
     return null;
   }
@@ -51,14 +51,15 @@ export const SaveProjectButton = memo(({}: SaveProjectButtonProps) => {
     <button
       onClick={handleSave}
       disabled={saving}
-      className="flex items-center justify-center w-8 h-8 rounded-md text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive border border-bolt-elements-borderColor transition-theme disabled:opacity-50"
-      title="Save entire project"
+      className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 transition-all text-xs font-medium shadow-sm"
+      title="Save entire project to cloud"
     >
       {saving ? (
-        <div className="i-svg-spinners:90-ring-with-bg text-base" />
+        <div className="i-svg-spinners:90-ring-with-bg text-sm" />
       ) : (
-        <div className="i-ph:floppy-disk-duotone text-base" />
+        <div className="i-ph:floppy-disk-duotone text-sm" />
       )}
+      <span>{saving ? 'Saving...' : 'Save Project'}</span>
     </button>
   );
 });
