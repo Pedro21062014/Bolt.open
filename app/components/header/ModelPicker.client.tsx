@@ -17,9 +17,9 @@ interface FlatOption {
 }
 
 const PROVIDER_LOGOS: Record<ProviderId, string> = {
-  google: 'https://imgs.search.brave.com/CIA23yHsmCVq2LL5DnLD5corQIHnOMW00Do1GBx-av8/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9sb2dv/LXRla2EuY29tL3dw/LWNvbnRlbnQvdXBs/b2Fkcy8yMDI2LzAy/L2dlbWluaS1pY29u/LWxvZ28tMzAweDMw/MC5wbmc',
+  google: 'https://cdn.iconscout.com/icon/free/png-512/free-gemini-logo-icon-svg-download-png-14426780.png?f=webp&w=256',
   openrouter: 'https://raw.githubusercontent.com/lobehub/lobe-icons/refs/heads/master/packages/static-png/light/openrouter.png',
-  anthropic: 'https://imgs.search.brave.com/nq9qSNuu2TxwXBMtRMVeqTtOlceI14TSyQdMWIhgz7g/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvMjAvQ2xh/dWRlLUxvZ28tU3Rh/cmJ1cnN0LVNoYXBl/LURlc2lnbi1JY29u/LVBORy10aHVtYi5w/bmc',
+  anthropic: 'https://www.pngall.com/wp-content/uploads/20/Claude-Logo-Starburst-Shape-Design-Icon-PNG.png',
 };
 
 export function ModelPicker() {
