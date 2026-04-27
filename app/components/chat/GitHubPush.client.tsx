@@ -9,10 +9,6 @@ interface Repo {
   full_name: string;
   private: boolean;
   default_branch: string;
-  description: string | nullinterface Repo {
-  full_name: string;
-  private: boolean;
-  default_branch: string;
   description: string | null;
   updated_at: string;
 }
