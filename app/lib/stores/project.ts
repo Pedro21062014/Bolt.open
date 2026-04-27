@@ -105,7 +105,6 @@ export async function updateActiveProjectSettings(patch: Partial<ProjectSettings
 
   projectsStore.setKey(id, updatedProject);
 
-  // Persist to Supabase
   const sb = getSupabase();
   const { user } = authStore.get();
 
@@ -139,7 +138,6 @@ export function envVarsToFile(envVars: EnvVar[]): string {
 }
 
 export async function writeEnvFile(envVars: EnvVar[]) {
-  if (envVars.filter((v) => v.key.trim()).length === 0) return;
   const { webcontainer } = await import('~/lib/webcontainer');
   const { WORK_DIR } = await import('~/utils/constants');
   const nodePath = await import('node:path');
