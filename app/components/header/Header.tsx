@@ -14,6 +14,7 @@ import { SaveProjectButton } from './SaveProjectButton.client';
 export function Header() {
   const chat = useStore(chatStore);
   const [appSettingsOpen, setAppSettingsOpen] = useState(false);
+  const [deployMenu, setDeployMenu] = useState(false);
 
   return (
     <header
@@ -40,6 +41,17 @@ export function Header() {
             <>
               {chat.started && (
                 <>
+                  <div className="relative">
+                    <button onClick={() => setDeployMenu(!deployMenu)} className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-blue-600 text-white hover:bg-blue-700 text-xs font-medium shadow-sm">
+                      <div className="i-ph:rocket-launch-duotone" /> Deploy
+                    </button>
+                    {deployMenu && (
+                      <div className="absolute right-0 mt-2 w-48 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-md shadow-lg py-1">
+                        <button className="w-full text-left px-4 py-2 text-sm hover:bg-bolt-elements-item-backgroundActive">Netlify</button>
+                        <button className="w-full text-left px-4 py-2 text-sm hover:bg-bolt-elements-item-backgroundActive">Cloudflare Pages</button>
+                      </div>
+                    )}
+                  </div>
                   <SaveProjectButton />
                   <GitHubPush />
                   <button
