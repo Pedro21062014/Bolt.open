@@ -42,19 +42,19 @@ export function Header() {
                 <>
                   <SaveProjectButton />
                   <GitHubPush />
+                  <button
+                    onClick={() => setAppSettingsOpen(true)}
+                    className="flex items-center justify-center w-8 h-8 rounded-md text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive border border-bolt-elements-borderColor transition-theme"
+                    title="Project Settings"
+                  >
+                    <div className="i-ph:sliders-horizontal text-base" />
+                  </button>
+                  <AppSettingsDialog open={appSettingsOpen} onClose={() => setAppSettingsOpen(false)} />
                 </>
               )}
-              <button
-                onClick={() => setAppSettingsOpen(true)}
-                className="flex items-center justify-center w-8 h-8 rounded-md text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive border border-bolt-elements-borderColor transition-theme"
-                title="App Settings"
-              >
-                <div className="i-ph:sliders-horizontal text-base" />
-              </button>
               <SettingsDialog />
               <AuthButton />
               <HeaderActionButtons />
-              <AppSettingsDialog open={appSettingsOpen} onClose={() => setAppSettingsOpen(false)} />
             </>
           )}
         </ClientOnly>
