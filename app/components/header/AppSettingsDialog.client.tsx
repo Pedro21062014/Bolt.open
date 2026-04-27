@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { getSupabaseConfig } from '~/lib/supabase';
 import { toast } from 'react-toastify';
 
 interface AppSettingsDialogProps {
@@ -8,28 +7,10 @@ interface AppSettingsDialogProps {
 }
 
 export function AppSettingsDialog({ open, onClose }: AppSettingsDialogProps) {
-  const [sbUrl, setSbUrl] = useState('');
-  const [sbKey, setSbKey] = useState('');
-
-  useEffect(() => {
-    if (open) {
-      const config = getSupabaseConfig();
-      setSbUrl(config.url);
-      setSbKey(config.key);
-    }
-  }, [open]);
-
-  const saveSupabaseConfig = () => {
-    if (!sbUrl.trim() || !sbKey.trim()) {
-      toast.error('Supabase URL and Anon Key are required.');
-      return;
-    }
-    
-    localStorage.setItem('bolt.supabase.url', sbUrl.trim());
-    localStorage.setItem('bolt.supabase.key', sbKey.trim());
-    
-    toast.success('Supabase configuration saved. Please refresh to apply changes.');
-  };
+  // Como as variáveis são lidas do ambiente, não precisamos mais editar a config via UI
+  // Mantemos o estado apenas para exibição se necessário
+  const [sbUrl] = useState(import.meta.env.VITE_SUPABASE_URL || 'Configurado via ambiente');
+  const [sbKey] = useState(import.meta.env.VITE_SUPABASE_ANON_KEY ? '********' : 'Não configurado');
 
   if (!open) return null;
 
@@ -57,27 +38,22 @@ export function AppSettingsDialog({ open, onClose }: AppSettingsDialogProps) {
               <input
                 type="text"
                 value={sbUrl}
-                onChange={(e) => setSbUrl(e.target.value)}
-                placeholder="https://your-project.supabase.co"
-                className="w-full px-3 py-2 rounded text-sm bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textPrimary focus:outline-none focus:border-bolt-elements-item-contentAccent"
+                disabled
+                className="w-full px-3 py-2 rounded text-sm bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textPrimary opacity-70"
               />
             </div>
             <div>
               <label className="block text-xs font-medium text-bolt-elements-textSecondary mb-1">Anon Key</label>
               <input
-                type="password"
+                type="text"
                 value={sbKey}
-                onChange={(e) => setSbKey(e.target.value)}
-                placeholder="your-anon-key"
-                className="w-full px-3 py-2 rounded text-sm bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textPrimary focus:outline-none focus:border-bolt-elements-item-contentAccent"
+                disabled
+                className="w-full px-3 py-2 rounded text-sm bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textPrimary opacity-70"
               />
             </div>
-            <button
-              onClick={saveSupabaseConfig}
-              className="w-full px-3 py-2 rounded text-sm font-medium bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent border border-bolt-elements-item-contentAccent hover:brightness-110 transition-all"
-            >
-              Save Configuration
-            </button>
+            <p className="text-xs text-bolt-elements-textTertiary">
+              As configurações do Supabase são gerenciadas via variáveis de ambiente do projeto.
+            </p>
           </div>
         </section>
 
