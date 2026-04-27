@@ -1,6 +1,9 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 export function getSupabaseConfig() {
+  if (typeof window === 'undefined') {
+    return { url: '', key: '' };
+  }
   const url = localStorage.getItem('bolt.supabase.url') || '';
   const key = localStorage.getItem('bolt.supabase.key') || '';
   return { url, key };
@@ -21,5 +24,5 @@ export function getSupabase(): SupabaseClient | null {
   });
 }
 
-export const supabase = getSupabase();
+export const supabase = typeof window !== 'undefined' ? getSupabase() : null;
 export const supabaseEnabled = !!supabase;
