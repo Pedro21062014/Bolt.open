@@ -17,9 +17,9 @@ interface FlatOption {
 }
 
 const PROVIDER_LOGOS: Record<ProviderId, string> = {
-  google: 'https://cdn.iconscout.com/icon/free/png-512/free-gemini-logo-icon-svg-download-png-14426780.png?f=webp&w=256',
+  google: '/gemini.svg',
   openrouter: 'https://raw.githubusercontent.com/lobehub/lobe-icons/refs/heads/master/packages/static-png/light/openrouter.png',
-  anthropic: 'https://www.pngall.com/wp-content/uploads/20/Claude-Logo-Starburst-Shape-Design-Icon-PNG.png',
+  anthropic: '/claude.svg',
 };
 
 export function ModelPicker() {
