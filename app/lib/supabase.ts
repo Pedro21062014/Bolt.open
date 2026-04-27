@@ -1,19 +1,16 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-export function getSupabaseConfig() {
-  if (typeof window === 'undefined') {
-    return { url: '', key: '' };
-  }
-  const url = localStorage.getItem('bolt.supabase.url') || '';
-  const key = localStorage.getItem('bolt.supabase.key') || '';
-  return { url, key };
-}
+// Usando as variáveis de ambiente definidas no seu projeto
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 export function getSupabase(): SupabaseClient | null {
-  const { url, key } = getSupabaseConfig();
-  if (!url || !key) return null;
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    console.error("Supabase URL ou Anon Key não configurados nas variáveis de ambiente.");
+    return null;
+  }
   
-  return createClient(url, key, {
+  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
