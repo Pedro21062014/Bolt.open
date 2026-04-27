@@ -67,7 +67,6 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
   useShortcuts();
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
   const [chatStarted, setChatStarted] = useState(initialMessages.length > 0);
 
   const { showChat } = useStore(chatStore);
@@ -85,20 +84,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
     },
     onError: async (error) => {
       logger.error('Request failed\n\n', error);
-      let msg = 'There was an error processing your request';
-      try {
-        const anyErr = error as unknown as { message?: string };
-        if (anyErr.message) {
-          const parsed = JSON.parse(anyErr.message);
-          if (parsed?.error) msg = parsed.error;
-        }
-      } catch {
-        /* ignore */
-      }
-      toast.error(msg);
-    },
-    onFinish: () => {
-      logger.debug('Finished streaming');
+      toast.error('There was an error processing your request');
     },
     initialMessages,
   });
@@ -106,81 +92,37 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
   const { enhancingPrompt, promptEnhanced, enhancePrompt, resetEnhancer } = usePromptEnhancer();
   const { parsedMessages, parseMessages } = useMessageParser();
 
-  const TEXTAREA_MAX_HEIGHT = chatStarted ? 400 : 200;
-
   useEffect(() => {
     chatStore.setKey('started', initialMessages.length > 0);
-    
     if (projectId && projectId !== 'default') {
-      workbenchStore.loadProjectFiles(projectId).then(() => {
-        logger.info('Project files synchronized from database');
-      });
+      workbenchStore.loadProjectFiles(projectId);
     }
   }, []);
 
   useEffect(() => {
     parseMessages(messages, isLoading);
-
     if (messages.length > initialMessages.length) {
       storeMessageHistory(messages).catch((error) => toast.error(error.message));
     }
   }, [messages, isLoading, parseMessages]);
 
-  const scrollTextArea = () => {
-    const textarea = textareaRef.current;
-
-    if (textarea) {
-      textarea.scrollTop = textarea.scrollHeight;
-    }
-  };
-
-  const abort = () => {
-    stop();
-    chatStore.setKey('aborted', true);
-    workbenchStore.abortAllActions();
-  };
-
-  useEffect(() => {
-    const textarea = textareaRef.current;
-
-    if (textarea) {
-      textarea.style.height = 'auto';
-
-      const scrollHeight = textarea.scrollHeight;
-
-      textarea.style.height = `${Math.min(scrollHeight, TEXTAREA_MAX_HEIGHT)}px`;
-      textarea.style.overflowY = scrollHeight > TEXTAREA_MAX_HEIGHT ? 'auto' : 'hidden';
-    }
-  }, [input, textareaRef]);
-
   const runAnimation = async () => {
-    if (chatStarted) {
-      return;
-    }
-
+    if (chatStarted) return;
     await Promise.all([
       animate('#examples', { opacity: 0, display: 'none' }, { duration: 0.1 }),
       animate('#intro', { opacity: 0, flex: 1 }, { duration: 0.2, ease: cubicEasingFn }),
     ]);
-
     chatStore.setKey('started', true);
-
     setChatStarted(true);
   };
 
   const sendMessage = async (_event: React.UIEvent, messageInput?: string) => {
     const _input = messageInput || input;
-
-    if (_input.length === 0 || isLoading) {
-      return;
-    }
+    if (_input.length === 0 || isLoading) return;
 
     await workbenchStore.saveAllFiles();
-
     const fileModifications = workbenchStore.getFileModifcations();
-
     chatStore.setKey('aborted', false);
-
     runAnimation();
 
     if (fileModifications !== undefined) {
@@ -190,69 +132,38 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
     } else {
       append({ role: 'user', content: _input });
     }
-
     setInput('');
-
     resetEnhancer();
-
-    textareaRef.current?.blur();
   };
 
   const [messageRef, scrollRef] = useSnapScroll();
 
-  const importFromGithub = async (result: {
-    owner: string;
-    repo: string;
-    ref?: string;
-    files: { path: string; content: string }[];
-  }) => {
+  const importFromGithub = async (result: any) => {
     const { webcontainer } = await import('~/lib/webcontainer');
-    const { WORK_DIR } = await import('~/utils/constants');
-    const nodePath = await import('node:path');
     const wc = await webcontainer;
 
     await workbenchStore.clearWorkspace();
 
-    const dirs = new Set<string>();
-    for (const f of result.files) {
-      const dir = nodePath.dirname(f.path);
-      if (dir && dir !== '.') dirs.add(dir);
-    }
-    for (const dir of dirs) {
-      try {
-        await wc.fs.mkdir(dir, { recursive: true });
-      } catch {}
-    }
-
-    let written = 0;
     for (const f of result.files) {
       try {
+        const dir = f.path.split('/').slice(0, -1).join('/');
+        if (dir) await wc.fs.mkdir(dir, { recursive: true });
         await wc.fs.writeFile(f.path, f.content);
-        const fullPath = nodePath.join(WORK_DIR, f.path);
-        workbenchStore.files.setKey(fullPath, { type: 'file', content: f.content, isBinary: false });
-        written++;
+        workbenchStore.files.setKey(f.path, { type: 'file', content: f.content, isBinary: false });
       } catch (err) {
         console.error('Failed to write', f.path, err);
       }
     }
 
     workbenchStore.showWorkbench.set(true);
-    const firstFile = result.files[0];
-    if (firstFile) {
-      workbenchStore.setSelectedFile(nodePath.join(WORK_DIR, firstFile.path));
-    }
-
     runAnimation();
 
-    // Trigger AI to analyze and recreate/improve the project
-    const prompt = `I have imported a project from ${result.owner}/${result.repo}. 
-    There are ${written} files loaded in the workspace. 
-    Please analyze the project structure and files, then provide a comprehensive update to ensure everything is correctly configured and optimized. 
-    Recreate or update any necessary files to make the project fully functional in this environment.`;
-
-    append({ role: 'user', content: prompt });
+    append({ 
+      role: 'user', 
+      content: `I have imported a project. Please analyze the files and provide the necessary shell commands to install dependencies and start the development server.` 
+    });
     
-    toast.success(`${written} files written to workspace. AI is analyzing...`);
+    toast.success(`Imported ${result.files.length} files. AI is preparing the environment...`);
   };
 
   return (
@@ -270,23 +181,9 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
       messageRef={messageRef}
       scrollRef={scrollRef}
       handleInputChange={handleInputChange}
-      handleStop={abort}
-      messages={messages.map((message, i) => {
-        if (message.role === 'user') {
-          return message;
-        }
-
-        return {
-          ...message,
-          content: parsedMessages[i] || '',
-        };
-      })}
-      enhancePrompt={() => {
-        enhancePrompt(input, (input) => {
-          setInput(input);
-          scrollTextArea();
-        });
-      }}
+      handleStop={stop}
+      messages={messages.map((m, i) => ({ ...m, content: parsedMessages[i] || m.content }))}
+      enhancePrompt={() => enhancePrompt(input, setInput)}
     />
   );
 });
