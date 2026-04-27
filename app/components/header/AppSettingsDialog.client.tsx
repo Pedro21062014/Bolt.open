@@ -1,7 +1,9 @@
 import { useStore } from '@nanostores/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { authStore, signOut, supabaseEnabled } from '~/lib/stores/auth';
 import { AuthDialog } from './AuthDialog.client';
+import { getSupabaseConfig } from '~/lib/supabase';
+import { toast } from 'react-toastify';
 
 interface AppSettingsDialogProps {
   open: boolean;
@@ -11,6 +13,29 @@ interface AppSettingsDialogProps {
 export function AppSettingsDialog({ open, onClose }: AppSettingsDialogProps) {
   const { user, initialized } = useStore(authStore);
   const [authOpen, setAuthOpen] = useState(false);
+  
+  const [sbUrl, setSbUrl] = useState('');
+  const [sbKey, setSbKey] = useState('');
+
+  useEffect(() => {
+    if (open) {
+      const config = getSupabaseConfig();
+      setSbUrl(config.url);
+      setSbKey(config.key);
+    }
+  }, [open]);
+
+  const saveSupabaseConfig = () => {
+    if (!sbUrl.trim() || !sbKey.trim()) {
+      toast.error('Supabase URL and Anon Key are required.');
+      return;
+    }
+    
+    localStorage.setItem('bolt.supabase.url', sbUrl.trim());
+    localStorage.setItem('bolt.supabase.key', sbKey.trim());
+    
+    toast.success('Supabase configuration saved. Please refresh to apply changes.');
+  };
 
   if (!open) return null;
 
@@ -32,6 +57,38 @@ export function AppSettingsDialog({ open, onClose }: AppSettingsDialogProps) {
 
         <div className="space-y-4">
           <section>
+            <h3 className="text-sm font-medium text-bolt-elements-textSecondary mb-3 uppercase tracking-wider">Supabase Configuration</h3>
+            <div className="space-y-3 p-4 rounded-lg border border-bolt-elements-borderColor bg-bolt-elements-background-depth-1">
+              <div>
+                <label className="block text-xs font-medium text-bolt-elements-textSecondary mb-1">Project URL</label>
+                <input
+                  type="text"
+                  value={sbUrl}
+                  onChange={(e) => setSbUrl(e.target.value)}
+                  placeholder="https://your-project.supabase.co"
+                  className="w-full px-3 py-2 rounded text-sm bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textPrimary focus:outline-none focus:border-bolt-elements-item-contentAccent"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-bolt-elements-textSecondary mb-1">Anon Key</label>
+                <input
+                  type="password"
+                  value={sbKey}
+                  onChange={(e) => setSbKey(e.target.value)}
+                  placeholder="your-anon-key"
+                  className="w-full px-3 py-2 rounded text-sm bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textPrimary focus:outline-none focus:border-bolt-elements-item-contentAccent"
+                />
+              </div>
+              <button
+                onClick={saveSupabaseConfig}
+                className="w-full px-3 py-2 rounded text-sm font-medium bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent border border-bolt-elements-item-contentAccent hover:brightness-110 transition-all"
+              >
+                Save Configuration
+              </button>
+            </div>
+          </section>
+
+          <section>
             <h3 className="text-sm font-medium text-bolt-elements-textSecondary mb-3 uppercase tracking-wider">Cloud Connection</h3>
             <div className="p-4 rounded-lg border border-bolt-elements-borderColor bg-bolt-elements-background-depth-1">
               <div className="flex items-center justify-between">
@@ -40,7 +97,7 @@ export function AppSettingsDialog({ open, onClose }: AppSettingsDialogProps) {
                     <div className="i-ph:database text-emerald-500 text-xl" />
                   </div>
                   <div>
-                    <div className="text-sm font-medium text-bolt-elements-textPrimary">Supabase</div>
+                    <div className="text-sm font-medium text-bolt-elements-textPrimary">Supabase Auth</div>
                     <div className="text-xs text-bolt-elements-textTertiary">
                       {user ? `Connected as ${user.email}` : 'Not connected'}
                     </div>
@@ -62,19 +119,6 @@ export function AppSettingsDialog({ open, onClose }: AppSettingsDialogProps) {
                     Connect
                   </button>
                 )}
-              </div>
-              <p className="mt-3 text-[11px] text-bolt-elements-textTertiary leading-relaxed">
-                Connecting to Supabase allows you to persist your projects, environment variables, and chat history across sessions.
-              </p>
-            </div>
-          </section>
-
-          <section>
-            <h3 className="text-sm font-medium text-bolt-elements-textSecondary mb-3 uppercase tracking-wider">Persistence</h3>
-            <div className="flex items-center justify-between p-3 rounded-lg bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor">
-              <span className="text-sm text-bolt-elements-textPrimary">Auto-save to Cloud</span>
-              <div className="w-10 h-5 rounded-full bg-bolt-elements-item-backgroundAccent relative">
-                <div className="absolute right-1 top-1 w-3 h-3 rounded-full bg-white" />
               </div>
             </div>
           </section>
