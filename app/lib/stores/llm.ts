@@ -77,12 +77,13 @@ export async function syncKeysToSupabase() {
   const { keys } = llmStore.get();
 
   if (sb && user) {
-    await sb.from('profiles').update({
+    await sb.from('profiles').upsert({
+      id: user.id,
       anthropic_key: keys.anthropic,
       openrouter_key: keys.openrouter,
       google_key: keys.google,
       updated_at: new Date().toISOString(),
-    }).eq('id', user.id);
+    });
   }
 }
 
@@ -124,8 +125,6 @@ export function selectProviderModel(provider: ProviderId, model: string) {
 export async function setApiKey(provider: ProviderId, key: string) {
   const current = llmStore.get();
   llmStore.setKey('keys', { ...current.keys, [provider]: key });
-  
-  // Sync to Supabase if logged in
   await syncKeysToSupabase();
 }
 

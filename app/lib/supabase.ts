@@ -1,19 +1,14 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 export function getSupabaseConfig() {
-  const url = import.meta.env.VITE_SUPABASE_URL || '';
-  const key = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
-  
+  const url = localStorage.getItem('bolt.supabase.url') || '';
+  const key = localStorage.getItem('bolt.supabase.key') || '';
   return { url, key };
 }
 
 export function getSupabase(): SupabaseClient | null {
   const { url, key } = getSupabaseConfig();
-  
-  if (!url || !key) {
-    console.error('Supabase configuration missing. Ensure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set.');
-    return null;
-  }
+  if (!url || !key) return null;
   
   return createClient(url, key, {
     auth: {
