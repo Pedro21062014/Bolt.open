@@ -17,9 +17,9 @@ interface FlatOption {
 }
 
 const PROVIDER_LOGOS: Record<ProviderId, string> = {
-  google: 'https://img.icons8.com/?size=100&id=mrNoLXFmvXDX&format=png&color=000000',
+  google: 'https://imgs.search.brave.com/CIA23yHsmCVq2LL5DnLD5corQIHnOMW00Do1GBx-av8/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9sb2dv/LXRla2EuY29tL3dw/LWNvbnRlbnQvdXBs/b2Fkcy8yMDI2LzAy/L2dlbWluaS1pY29u/LWxvZ28tMzAweDMw/MC5wbmc',
   openrouter: 'https://raw.githubusercontent.com/lobehub/lobe-icons/refs/heads/master/packages/static-png/light/openrouter.png',
-  anthropic: 'https://img.icons8.com/?size=100&id=zQjzFjPpT2Ek&format=png&color=000000',
+  anthropic: 'https://imgs.search.brave.com/nq9qSNuu2TxwXBMtRMVeqTtOlceI14TSyQdMWIhgz7g/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvMjAvQ2xh/dWRlLUxvZ28tU3Rh/cmJ1cnN0LVNoYXBl/LURlc2lnbi1JY29u/LVBORy10aHVtYi5w/bmc',
 };
 
 export function ModelPicker() {
