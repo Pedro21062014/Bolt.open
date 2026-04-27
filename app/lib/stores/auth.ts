@@ -40,6 +40,7 @@ export async function initAuth() {
   const sb = getSupabase();
   authStore.setKey('initialized', true);
   if (!sb) return;
+  
   const { data } = await sb.auth.getSession();
   if (data.session) {
     authStore.set({
@@ -52,9 +53,9 @@ export async function initAuth() {
       githubProviderTokenStore.set(data.session.provider_token);
     }
     
-    // Load keys from Supabase
     await loadKeysFromSupabase();
   }
+  
   sb.auth.onAuthStateChange(async (event, session) => {
     authStore.set({
       user: session?.user ?? null,
@@ -76,14 +77,14 @@ export async function initAuth() {
 
 export async function signInWithEmail(email: string, password: string) {
   const sb = getSupabase();
-  if (!sb) throw new Error('Auth not configured');
+  if (!sb) throw new Error('Supabase is not configured. Please check your settings.');
   const { error } = await sb.auth.signInWithPassword({ email, password });
   if (error) throw error;
 }
 
 export async function signUpWithEmail(email: string, password: string) {
   const sb = getSupabase();
-  if (!sb) throw new Error('Auth not configured');
+  if (!sb) throw new Error('Supabase is not configured. Please check your settings.');
   const { error } = await sb.auth.signUp({
     email,
     password,
@@ -94,7 +95,7 @@ export async function signUpWithEmail(email: string, password: string) {
 
 export async function signInWithGoogle() {
   const sb = getSupabase();
-  if (!sb) throw new Error('Auth not configured');
+  if (!sb) throw new Error('Supabase is not configured. Please check your settings.');
   const { error } = await sb.auth.signInWithOAuth({
     provider: 'google',
     options: { redirectTo: `${window.location.origin}/auth/callback` },
@@ -104,7 +105,7 @@ export async function signInWithGoogle() {
 
 export async function signInWithGitHub() {
   const sb = getSupabase();
-  if (!sb) throw new Error('Auth not configured');
+  if (!sb) throw new Error('Supabase is not configured. Please check your settings.');
   const { error } = await sb.auth.signInWithOAuth({
     provider: 'github',
     options: {
