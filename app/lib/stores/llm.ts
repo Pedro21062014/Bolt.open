@@ -1,4 +1,6 @@
 import { atom, map } from 'nanostores';
+import { getSupabase } from '~/lib/supabase';
+import { authStore } from './auth';
 
 export type ProviderId = 'anthropic' | 'openrouter' | 'google';
 
@@ -69,6 +71,43 @@ if (typeof window !== 'undefined') {
   });
 }
 
+export async function syncKeysToSupabase() {
+  const sb = getSupabase();
+  const { user } = authStore.get();
+  const { keys } = llmStore.get();
+
+  if (sb && user) {
+    await sb.from('profiles').update({
+      anthropic_key: keys.anthropic,
+      openrouter_key: keys.openrouter,
+      google_key: keys.google,
+      updated_at: new Date().toISOString(),
+    }).eq('id', user.id);
+  }
+}
+
+export async function loadKeysFromSupabase() {
+  const sb = getSupabase();
+  const { user } = authStore.get();
+
+  if (sb && user) {
+    const { data, error } = await sb
+      .from('profiles')
+      .select('anthropic_key, openrouter_key, google_key')
+      .eq('id', user.id)
+      .single();
+
+    if (!error && data) {
+      const current = llmStore.get();
+      llmStore.setKey('keys', {
+        anthropic: data.anthropic_key || current.keys.anthropic,
+        openrouter: data.openrouter_key || current.keys.openrouter,
+        google: data.google_key || current.keys.google,
+      });
+    }
+  }
+}
+
 export function setProvider(provider: ProviderId) {
   llmStore.setKey('provider', provider);
 }
@@ -82,9 +121,12 @@ export function selectProviderModel(provider: ProviderId, model: string) {
   llmStore.setKey('model', model);
 }
 
-export function setApiKey(provider: ProviderId, key: string) {
+export async function setApiKey(provider: ProviderId, key: string) {
   const current = llmStore.get();
   llmStore.setKey('keys', { ...current.keys, [provider]: key });
+  
+  // Sync to Supabase if logged in
+  await syncKeysToSupabase();
 }
 
 export function getChatBody() {

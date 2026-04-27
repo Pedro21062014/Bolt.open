@@ -1,6 +1,7 @@
 import { atom, map } from 'nanostores';
 import type { Session, User } from '@supabase/supabase-js';
 import { getSupabase, supabaseEnabled } from '~/lib/supabase';
+import { loadKeysFromSupabase } from './llm';
 
 export interface AuthState {
   user: User | null;
@@ -50,8 +51,11 @@ export async function initAuth() {
     if (data.session.provider_token && data.session.user.app_metadata.provider === 'github') {
       githubProviderTokenStore.set(data.session.provider_token);
     }
+    
+    // Load keys from Supabase
+    await loadKeysFromSupabase();
   }
-  sb.auth.onAuthStateChange((event, session) => {
+  sb.auth.onAuthStateChange(async (event, session) => {
     authStore.set({
       user: session?.user ?? null,
       session: session ?? null,
@@ -63,6 +67,9 @@ export async function initAuth() {
     }
     if (event === 'SIGNED_OUT') {
       githubProviderTokenStore.set(null);
+    }
+    if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+      await loadKeysFromSupabase();
     }
   });
 }
