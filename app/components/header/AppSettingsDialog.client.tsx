@@ -81,7 +81,15 @@ export function AppSettingsDialog({ open, onClose }: { open: boolean; onClose: (
       <div onClick={e => e.stopPropagation()} className="w-[700px] h-[500px] bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-xl shadow-2xl flex overflow-hidden">
         <aside className="w-48 bg-bolt-elements-background-depth-1 border-r border-bolt-elements-borderColor p-4 space-y-2">
           {['general', 'env', 'versions'].map(t => (
-            <button key={t} onClick={() => setTab(t as any)} className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${tab === t ? 'bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent' : 'text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive'}`}>
+            <button 
+              key={t} 
+              onClick={() => setTab(t as any)} 
+              className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                tab === t 
+                  ? 'bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent' 
+                  : 'text-bolt-elements-textSecondary hover:bg-bolt-elements-item-backgroundActive'
+              }`}
+            >
               {t.charAt(0).toUpperCase() + t.slice(1)}
             </button>
           ))}
@@ -112,7 +120,15 @@ export function AppSettingsDialog({ open, onClose }: { open: boolean; onClose: (
                       <div className="i-ph:image text-2xl text-bolt-elements-textTertiary" />
                     )}
                   </div>
-                  <input type="file" accept="image/*" onChange={handleLogoUpload} className="text-sm" />
+                  <div className="flex-1">
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={handleLogoUpload} 
+                      className="w-full text-sm p-2 bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor rounded-lg"
+                    />
+                    <p className="text-xs text-bolt-elements-textTertiary mt-1">PNG, JPG, SVG até 2MB</p>
+                  </div>
                 </div>
               </div>
             </div>
