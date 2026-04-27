@@ -15,17 +15,10 @@ export function Header() {
   const chat = useStore(chatStore);
   const [appSettingsOpen, setAppSettingsOpen] = useState(false);
   const [deployMenu, setDeployMenu] = useState(false);
+  const [deployModal, setDeployModal] = useState(false);
 
   return (
-    <header
-      className={classNames(
-        'flex items-center justify-between bg-bolt-elements-background-depth-1 p-5 border-b h-[var(--header-height)]',
-        {
-          'border-transparent': !chat.started,
-          'border-bolt-elements-borderColor': chat.started,
-        },
-      )}
-    >
+    <header className="flex items-center justify-between bg-bolt-elements-background-depth-1 p-5 border-b h-[var(--header-height)] border-bolt-elements-borderColor">
       <div className="flex items-center gap-2 z-logo text-bolt-elements-textPrimary cursor-pointer">
         <div className="i-ph:sidebar-simple-duotone text-xl" />
         <a href="/" className="text-2xl font-semibold text-accent flex items-center">
@@ -47,18 +40,13 @@ export function Header() {
                     </button>
                     {deployMenu && (
                       <div className="absolute right-0 mt-2 w-48 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor rounded-md shadow-lg py-1">
-                        <button className="w-full text-left px-4 py-2 text-sm hover:bg-bolt-elements-item-backgroundActive">Netlify</button>
-                        <button className="w-full text-left px-4 py-2 text-sm hover:bg-bolt-elements-item-backgroundActive">Cloudflare Pages</button>
+                        <button onClick={() => { setDeployModal(true); setDeployMenu(false); }} className="w-full text-left px-4 py-2 text-sm hover:bg-bolt-elements-item-backgroundActive">Netlify</button>
                       </div>
                     )}
                   </div>
                   <SaveProjectButton />
                   <GitHubPush />
-                  <button
-                    onClick={() => setAppSettingsOpen(true)}
-                    className="flex items-center justify-center w-8 h-8 rounded-md text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive border border-bolt-elements-borderColor transition-theme"
-                    title="Project Settings"
-                  >
+                  <button onClick={() => setAppSettingsOpen(true)} className="flex items-center justify-center w-8 h-8 rounded-md text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive border border-bolt-elements-borderColor transition-theme">
                     <div className="i-ph:sliders-horizontal text-base" />
                   </button>
                   <AppSettingsDialog open={appSettingsOpen} onClose={() => setAppSettingsOpen(false)} />
@@ -71,6 +59,16 @@ export function Header() {
           )}
         </ClientOnly>
       </div>
+
+      {deployModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50" onClick={() => setDeployModal(false)}>
+          <div onClick={e => e.stopPropagation()} className="bg-bolt-elements-background-depth-2 p-6 rounded-lg border border-bolt-elements-borderColor w-[400px]">
+            <h2 className="text-lg font-bold mb-4">Deploy para Netlify</h2>
+            <p className="text-sm text-bolt-elements-textSecondary mb-4">Conecte sua conta Netlify para iniciar o deploy automático do seu projeto.</p>
+            <button className="w-full py-2 bg-blue-600 text-white rounded">Conectar Netlify</button>
+          </div>
+        </div>
+      )}
     </header>
   );
 }
