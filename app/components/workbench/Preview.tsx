@@ -1,5 +1,5 @@
 import { useStore } from '@nanostores/react';
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { IconButton } from '~/components/ui/IconButton';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { PortDropdown } from './PortDropdown';
@@ -34,8 +34,13 @@ export const Preview = memo(() => {
     if (iframeRef.current) iframeRef.current.src = iframeRef.current.src;
   };
 
-  const openInNewTab = () => {
-    if (iframeUrl) window.open(iframeUrl, '_blank');
+  const toggleFullscreen = () => {
+    if (!iframeRef.current) return;
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      iframeRef.current.requestFullscreen();
+    }
   };
 
   const getDeviceStyles = () => {
@@ -48,8 +53,13 @@ export const Preview = memo(() => {
     <div className="w-full h-full flex flex-col bg-bolt-elements-background-depth-1">
       <div className="bg-bolt-elements-background-depth-2 p-2 flex items-center gap-2 border-b border-bolt-elements-borderColor">
         <IconButton icon="i-ph:arrow-clockwise" onClick={reloadPreview} />
-        <IconButton icon="i-ph:arrow-square-out" onClick={openInNewTab} title="Open in new tab" />
+        <IconButton icon="i-ph:arrows-out-simple" onClick={toggleFullscreen} title="Fullscreen" />
         
+        <div className="flex-1 flex items-center bg-bolt-elements-background-depth-1 border border-bolt-elements-borderColor rounded-md px-3 py-1 text-xs text-bolt-elements-textSecondary">
+          <div className="i-ph:link mr-2" />
+          {url || 'No URL'}
+        </div>
+
         <div className="flex items-center gap-1 bg-bolt-elements-background-depth-3 rounded-md p-0.5">
           <IconButton icon="i-ph:monitor" onClick={() => setDevice('desktop')} className={device === 'desktop' ? 'bg-bolt-elements-item-backgroundActive' : ''} />
           <IconButton icon="i-ph:tablet" onClick={() => setDevice('tablet')} className={device === 'tablet' ? 'bg-bolt-elements-item-backgroundActive' : ''} />
@@ -59,8 +69,6 @@ export const Preview = memo(() => {
         {device !== 'desktop' && (
           <IconButton icon="i-ph:arrows-clockwise" onClick={() => setIsLandscape(!isLandscape)} title="Rotate" />
         )}
-
-        <div className="flex-grow" />
         
         {previews.length > 1 && (
           <PortDropdown
